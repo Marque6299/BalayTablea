@@ -3,7 +3,7 @@
   --accent:#D97706; --accent-hover:#B45309; --accent-alpha:rgba(217,119,6,.15);
   --bg-base:#0F172A; --bg-surface:#1E293B; --bg-surface-elevated:#334155;
   --border-color:rgba(255,255,255,.1);
-  --text-main:#F8FAFC; --text-muted:#94A3B8; --text-disabled:#64748B;
+  --text-main:#F8FAFC; --text-muted:#A9B7C9; --text-disabled:#7C8CA1;
   --success:#10B981; --success-bg:rgba(16,185,129,.15);
   --warning:#F59E0B; --warning-bg:rgba(245,158,11,.15);
   --danger:#EF4444; --danger-bg:rgba(239,68,68,.15);
@@ -61,6 +61,9 @@ header{
 .nav{display:flex; align-items:center; justify-content:space-between; padding:1.1rem 0}
 .brand{font-family:'Fraunces',serif; font-weight:700; font-size:1.35rem}
 .brand span{color:var(--clay)}
+.brand-logo{display:inline-flex; align-items:center}
+.brand-logo img{height:2.5rem; width:auto; max-width:11rem; object-fit:contain; display:block}
+footer .brand-logo img{height:2.1rem}
 nav.links{display:flex; gap:1.75rem; list-style:none; margin:0; padding:0}
 nav.links a{text-decoration:none; font-weight:600; font-size:.92rem}
 .navBtns{display:flex; gap:.75rem; align-items:center}
@@ -103,18 +106,22 @@ nav.links a{text-decoration:none; font-weight:600; font-size:.92rem}
 .timeline h3{font-size:1.15rem; margin-bottom:.35rem}
 @media (max-width:640px){ .timeline li{grid-template-columns:1fr} .timeline .year{margin-bottom:.2rem} }
 
-/* process */
-.process-strip{background:var(--moss-deep); color:var(--paper-soft)}
+/* process
+   NOTE: this band always needs LIGHT text regardless of theme, so it uses
+   --text-main directly (fixed light value) rather than --paper-soft, which
+   the 2026 dark-mode remap turned into a *dark* slate tone — using it here
+   produced near-invisible dark-on-dark text. */
+.process-strip{background:var(--moss-deep); color:var(--text-main)}
 .process-strip .eyebrow{color:var(--gold)}
-.process-strip h2{color:var(--paper-soft)}
+.process-strip h2{color:var(--text-main)}
 .process-grid{display:grid; grid-template-columns:1.2fr .8fr; gap:clamp(2rem,5vw,4rem); align-items:start}
-.process-img figcaption{color:var(--paper-soft); opacity:.75}
+.process-img figcaption{color:var(--text-main); opacity:.75}
 .process-img img{border-radius:4px}
 .steps{list-style:none; margin:2.5rem 0 0; padding:0; display:grid; gap:1.5rem}
 .steps li{border-top:2px solid var(--gold); padding-top:1rem}
 .steps .num{font-family:'Fraunces',serif; font-size:1.6rem; color:var(--gold); display:block}
-.steps h3{font-size:1.1rem; margin:.4rem 0 .4rem; color:var(--paper-soft)}
-.steps p{font-size:.92rem; opacity:.85; max-width:none}
+.steps h3{font-size:1.1rem; margin:.4rem 0 .4rem; color:var(--text-main)}
+.steps p{font-size:.92rem; opacity:.85; max-width:none; color:var(--text-main)}
 @media (max-width:900px){ .process-grid{grid-template-columns:1fr} .process-img{order:-1} }
 
 /* products */
@@ -230,7 +237,7 @@ nav.links a.active::after{content:""; position:absolute; left:0; right:0; bottom
 .quote-block p{font-family:'Fraunces',serif; font-style:italic; font-size:1.25rem; line-height:1.5; max-width:52ch; margin:0}
 .quote-block cite{display:block; margin-top:.8rem; font-style:normal; font-size:.88rem; font-weight:600; opacity:.8}
 .quote-block.on-dark{border-left-color:var(--gold)}
-.quote-block.on-dark p, .quote-block.on-dark cite{color:var(--paper-soft)}
+.quote-block.on-dark p, .quote-block.on-dark cite{color:var(--text-main)}
 
 /* impact / stats strip reused across pages */
 .impact-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:1.5rem; margin-top:2.2rem}
@@ -397,6 +404,22 @@ nav.links a.active::after{content:""; position:absolute; left:0; right:0; bottom
 .storefront-card .sf-line{display:flex; gap:.5rem; font-size:.85rem; margin-top:.4rem; color:var(--text-muted); align-items:flex-start}
 .storefront-card .sf-line svg{flex-shrink:0; margin-top:.15rem; color:var(--accent)}
 @media (max-width:760px){ .storefront-grid{grid-template-columns:1fr} }
+
+/* ---- photo-backed sections (adds visual texture behind key CTAs) ---- */
+.bg-photo{
+  position:relative; background-size:cover; background-position:center; overflow:hidden;
+  color:var(--text-main);
+}
+.bg-photo::before{
+  content:""; position:absolute; inset:0;
+  background:linear-gradient(180deg, rgba(15,23,42,.82) 0%, rgba(15,23,42,.9) 60%, rgba(15,23,42,.96) 100%);
+  z-index:0;
+}
+.bg-photo > .wrap{position:relative; z-index:1}
+.bg-photo .eyebrow{color:var(--gold)}
+.bg-photo h2{color:var(--text-main)}
+.bg-photo p{color:var(--text-main); opacity:.92}
+.bg-photo .tag{border-color:rgba(248,250,252,.4); color:var(--text-main)}
 
 /* ---- visit booking form ---- */
 .pax-row{display:grid; grid-template-columns:1fr 1fr; gap:1rem}
