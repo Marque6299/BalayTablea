@@ -61,9 +61,11 @@ header{
 .nav{display:flex; align-items:center; justify-content:space-between; padding:1.1rem 0}
 .brand{font-family:'Fraunces',serif; font-weight:700; font-size:1.35rem}
 .brand span{color:var(--clay)}
-.brand-logo{display:inline-flex; align-items:center}
+.brand-logo{display:inline-flex; align-items:center; gap:.55rem}
 .brand-logo img{height:2.5rem; width:auto; max-width:11rem; object-fit:contain; display:block}
+.brand-wordmark{font-family:'Fraunces',serif; font-weight:700; font-size:1.15rem; letter-spacing:.03em; color:var(--ink); white-space:nowrap}
 footer .brand-logo img{height:2.1rem}
+@media (max-width:480px){ .brand-wordmark{font-size:.95rem} }
 nav.links{display:flex; gap:1.75rem; list-style:none; margin:0; padding:0}
 nav.links a{text-decoration:none; font-weight:600; font-size:.92rem}
 .navBtns{display:flex; gap:.75rem; align-items:center}

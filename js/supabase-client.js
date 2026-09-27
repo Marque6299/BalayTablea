@@ -146,6 +146,17 @@
       });
   }
 
+  function lookupOrderStatus(orderNum, email) {
+    // Calls the get_order_status(p_order_number, p_email) RPC — a
+    // SECURITY DEFINER function that only returns a match when BOTH the
+    // order number and email are correct, so anon can never browse orders.
+    return db.rpc('get_order_status', { p_order_number: orderNum, p_email: email })
+      .then(function (res) {
+        if (res.error) throw res.error;
+        return res.data || null;
+      });
+  }
+
   function storefrontCardHtml(s) {
     return (
       '<div class="storefront-card">' +
@@ -182,6 +193,7 @@
     mountStorefronts: mountStorefronts,
     submitInquiry: submitInquiry,
     submitVisitBooking: submitVisitBooking,
-    submitOrder: submitOrder
+    submitOrder: submitOrder,
+    lookupOrderStatus: lookupOrderStatus
   };
 })();

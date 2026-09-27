@@ -1080,7 +1080,49 @@
     let CURRENT_SESSION = null;
     let heartbeatTimer = null;
 
+    // --- 24-hour hard session timeout, counted from the moment the person
+    // actually typed their credentials in (not from each page reload / token
+    // refresh). Supabase's own JWT auto-refreshes indefinitely by default,
+    // so this is enforced client-side against a timestamp in localStorage.
+    const SESSION_TIMEOUT_MS = 24 * 60 * 60 * 1000;
+    const LOGIN_AT_KEY = 'bt_admin_login_at';
+
+    function markLoginNow() {
+      localStorage.setItem(LOGIN_AT_KEY, String(Date.now()));
+    }
+    function getLoginAt() {
+      const v = localStorage.getItem(LOGIN_AT_KEY);
+      return v ? Number(v) : null;
+    }
+    function clearLoginAt() {
+      localStorage.removeItem(LOGIN_AT_KEY);
+    }
+    function sessionExpired() {
+      const loginAt = getLoginAt();
+      if (!loginAt) return false;
+      return (Date.now() - loginAt) >= SESSION_TIMEOUT_MS;
+    }
+    async function enforceSessionTimeout() {
+      if (!CURRENT_SESSION) return;
+      if (sessionExpired()) {
+        await db.auth.signOut();
+        clearLoginAt();
+        showToast('Your session expired after 24 hours — please sign in again.', 'info');
+      }
+    }
+
     async function onSignedIn(session) {
+      // No recorded login time (e.g. very first run after this feature
+      // shipped) — treat this moment as the start of the 24h window.
+      if (!getLoginAt()) markLoginNow();
+
+      if (sessionExpired()) {
+        await db.auth.signOut();
+        clearLoginAt();
+        showToast('Your session expired after 24 hours — please sign in again.', 'info');
+        return;
+      }
+
       CURRENT_SESSION = session;
       authOverlay.style.display = 'none';
       await setupSessionCard(session);
@@ -1122,6 +1164,7 @@
       if (error) {
         showToast('Login Failed: ' + error.message, 'error');
       } else {
+        markLoginNow(); // a real, fresh sign-in — this starts the 24h clock
         showToast('Signed in successfully', 'success');
         await onSignedIn(data.session);
       }
@@ -1129,6 +1172,7 @@
 
     async function handleLogout() {
       await db.auth.signOut();
+      clearLoginAt();
       showToast('Logged out', 'info');
     }
 
@@ -1175,6 +1219,8 @@
 
     async function heartbeat() {
       if (!CURRENT_SESSION) return;
+      await enforceSessionTimeout();
+      if (!CURRENT_SESSION) return; // may have just been signed out above
       await db.from('staff')
         .update({ last_seen_at: new Date().toISOString() })
         .eq('auth_user_id', CURRENT_SESSION.user.id);

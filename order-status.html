@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Track Your Order — Balay Tablea</title>
+<meta name="description" content="Check the status of your Balay Tablea order using your Order ID and email address.">
+<link rel="canonical" href="https://balaytablea.netlify.app/order-status.html">
+<meta property="og:title" content="Track Your Order — Balay Tablea">
+<meta property="og:description" content="Check the status of your Balay Tablea order using your Order ID and email address.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://balaytablea.netlify.app/order-status.html">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8D%AB%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .track-wrap{max-width:640px}
+  .track-card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:clamp(1.5rem,4vw,2.4rem)}
+  .track-form .field{margin-bottom:1.1rem}
+  .track-result{margin-top:2rem; display:none}
+  .track-result.show{display:block}
+  .status-pill{display:inline-flex; align-items:center; gap:.5rem; padding:.4rem 1rem; border-radius:99px; font-weight:700; font-size:.85rem; text-transform:capitalize}
+  .status-pill::before{content:""; width:.55rem; height:.55rem; border-radius:50%; background:currentColor}
+  .status-pending{background:rgba(245,158,11,.15); color:#F59E0B}
+  .status-processing{background:rgba(59,130,246,.15); color:#3B82F6}
+  .status-shipped{background:rgba(139,92,246,.15); color:#8B5CF6}
+  .status-completed{background:rgba(16,185,129,.15); color:#10B981}
+  .status-cancelled{background:rgba(239,68,68,.15); color:#EF4444}
+  .track-steps{list-style:none; margin:1.6rem 0; padding:0; display:flex; justify-content:space-between; gap:.5rem}
+  .track-steps li{flex:1; text-align:center; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted, #94A3B8); position:relative; padding-top:1.6rem}
+  .track-steps li::before{content:""; position:absolute; top:0; left:50%; transform:translateX(-50%); width:1.1rem; height:1.1rem; border-radius:50%; background:var(--line); border:2px solid var(--paper)}
+  .track-steps li::after{content:""; position:absolute; top:.5rem; left:calc(50% + .6rem); width:100%; height:2px; background:var(--line)}
+  .track-steps li:last-child::after{display:none}
+  .track-steps li.done{color:var(--ink); font-weight:700}
+  .track-steps li.done::before{background:var(--clay)}
+  .track-steps li.done::after{background:var(--clay)}
+  .track-items{margin-top:1.5rem; border-top:1px solid var(--line)}
+  .track-item-row{display:flex; justify-content:space-between; gap:1rem; padding:.75rem 0; border-bottom:1px solid var(--line); font-size:.9rem}
+  .track-item-row .qty{color:var(--text-muted, #94A3B8)}
+  .track-total-row{display:flex; justify-content:space-between; padding-top:1rem; font-weight:700; font-size:1.05rem}
+  .track-error{margin-top:1.5rem; padding:1rem 1.2rem; border-radius:8px; background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); color:#EF4444; font-size:.9rem; display:none}
+  .track-error.show{display:block}
+</style>
+</head>
+<body>
+<div id="announceBar"></div>
+
+<header>
+  <div class="wrap nav">
+    <a href="index.html" class="brand brand-logo" style="text-decoration:none"><img src="img/logo.png" alt="Balay Tablea" width="150" height="44"><span class="brand-wordmark">BALAY TABLEA</span></a>
+    <nav class="links" id="navLinks">
+      <a href="index.html">Home</a>
+      <a href="about.html">Our Story</a>
+      <a href="process.html">Our Process</a>
+      <a href="shop.html">Shop</a>
+      <a href="recognition.html">Recognition</a>
+      <a href="visit.html">Visit Us</a>
+    </nav>
+    <div class="navBtns">
+      <a href="contact.html" class="btn btn-ghost">Contact &amp; Wholesale</a>
+      <button id="menuToggle" aria-label="Menu">&#9776;</button>
+    </div>
+  </div>
+</header>
+
+<section class="page-hero" style="padding-block:clamp(3rem,7vw,5rem)">
+  <div class="wrap">
+    <div class="crumb"><a href="index.html">Home</a> / Track Order</div>
+    <div class="eyebrow">Order Status</div>
+    <h1>Where's my tablea?</h1>
+    <p class="lede">Enter your Order ID and the email you used at checkout to check your order's status.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap track-wrap">
+    <div class="track-card">
+      <form class="track-form" id="trackForm">
+        <div class="field">
+          <label for="t-order">Order ID</label>
+          <input id="t-order" name="order_number" placeholder="e.g. BT-260115-A9K2" required autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="t-email">Email address</label>
+          <input id="t-email" name="email" type="email" placeholder="you@example.com" required autocomplete="off">
+        </div>
+        <button type="submit" class="btn btn-primary" id="trackBtn" style="width:100%; justify-content:center">Check Status</button>
+      </form>
+
+      <div class="track-error" id="trackError"></div>
+
+      <div class="track-result" id="trackResult">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
+          <div>
+            <div style="font-size:.78rem; color:var(--text-muted,#94A3B8); text-transform:uppercase; letter-spacing:.04em;">Order</div>
+            <div style="font-family:'Fraunces',serif; font-size:1.3rem; font-weight:700;" id="r-order-number">—</div>
+          </div>
+          <span class="status-pill" id="r-status-pill">—</span>
+        </div>
+
+        <ol class="track-steps" id="r-steps">
+          <li data-step="pending">Placed</li>
+          <li data-step="processing">Processing</li>
+          <li data-step="shipped">Shipped</li>
+          <li data-step="completed">Completed</li>
+        </ol>
+
+        <p style="font-size:.85rem; color:var(--text-muted,#94A3B8)">Placed <span id="r-date">—</span><span id="r-address-wrap"> · Shipping to <span id="r-address"></span></span></p>
+
+        <div class="track-items" id="r-items"></div>
+        <div class="track-total-row"><span>Total</span><span id="r-total">₱0.00</span></div>
+      </div>
+    </div>
+
+    <p style="margin-top:1.5rem; font-size:.85rem; color:var(--text-muted,#94A3B8); text-align:center;">
+      Can't find your order? <a href="contact.html">Message us</a> and we'll look it up for you.
+    </p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap footGrid sitemap">
+    <div class="footCol" style="max-width:240px">
+      <div class="brand brand-logo"><img src="img/logo.png" alt="Balay Tablea" width="130" height="38"></div>
+      <p style="margin-top:.6rem; font-size:.88rem">Rizal Street, Cabatuan, Iloilo, Philippines — authorized manufacturer &amp; distributor of Tan Tono Tablea, Cabatuan's official OTOP cacao product.</p>
+    </div>
+    <div class="footCol">
+      <h4>Explore</h4>
+      <ul>
+        <li><a href="about.html">Our Story</a></li>
+        <li><a href="process.html">Our Process</a></li>
+        <li><a href="shop.html">Shop</a></li>
+        <li><a href="recognition.html">Recognition</a></li>
+      </ul>
+    </div>
+    <div class="footCol">
+      <h4>Visit &amp; Order</h4>
+      <ul>
+        <li><a href="visit.html">Plan a Visit</a></li>
+        <li><a href="order-status.html">Track Order</a></li>
+        <li><a href="contact.html">Contact &amp; Wholesale</a></li>
+      </ul>
+    </div>
+    <div class="footCol">
+      <h4>Recognized by</h4>
+      <ul style="font-size:.85rem; opacity:.85">
+        <li>Cabatuan LGU — OTOP Commodity</li>
+        <li>DOST Region VI — SETUP</li>
+        <li>UNESCO Cities of Gastronomy Expo</li>
+      </ul>
+    </div>
+  </div>
+  <div class="wrap" style="margin-top:1.8rem; padding-top:1.5rem; border-top:1px solid var(--line); font-size:.82rem; opacity:.7">
+    &copy; 2026 Sunburst's Balay Tablea. Heritage chocolate, hand-made in Cabatuan, Iloilo.
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/main.js"></script>
+<script src="js/order-status.js"></script>
+</body>
+</html>
