@@ -41,6 +41,7 @@
 </script>
 </head>
 <body>
+<div id="announceBar"></div>
 
 <header>
   <div class="wrap nav">
@@ -68,7 +69,7 @@
     <p class="lede">Sunburst's Balay Tablea keeps Cabatuan's cacao tradition alive the old way: beans from local farming families, ground by hand on a stone metate, rolled and wrapped in banana leaf, brewed into tsokolate the way it's always been.</p>
     <div class="heroBtns" style="margin-top:1.6rem">
       <a href="shop.html" class="btn btn-primary">See Our Products</a>
-      <a href="visit.html" class="btn btn-ghost" style="border-color:#F3EDDB; color:#F3EDDB">Plan a Visit</a>
+      <a href="visit.html" class="btn btn-ghost" style="border-color:#F8FAFC; color:#F8FAFC">Plan a Visit</a>
     </div>
   </div>
 </section>
@@ -173,6 +174,16 @@
   </div>
 </section>
 
+<section class="section-tinted" id="storefronts-teaser">
+  <div class="wrap">
+    <div class="eyebrow">Find Us</div>
+    <h2>Our storefront &amp; partner kitchens.</h2>
+    <p style="max-width:64ch">The workshop and store in Cabatuan, plus partner kitchens around Iloilo already serving Balay Tablea cacao.</p>
+    <div class="storefront-grid" id="storefrontGridHome"></div>
+    <a href="visit.html" class="btn btn-ghost" style="margin-top:1.6rem">Plan a visit &amp; see hours</a>
+  </div>
+</section>
+
 <section id="cta-wholesale">
   <div class="wrap" style="text-align:center">
     <div class="eyebrow">For Hotels, Cafés &amp; Pasalubong Shops</div>
@@ -219,6 +230,8 @@
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-client.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>
