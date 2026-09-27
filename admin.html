@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
   <!-- Supabase JS Client v2 -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-javascript@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
   <style>
     :root {
@@ -708,6 +708,19 @@
     // Replace these credentials with your Netlify environment variables or direct Supabase details
     const SUPABASE_URL = 'https://mmbdewpfmybfkczczdhn.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tYmRld3BmbXliZmtjemN6ZGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA0ODMwNDYsImV4cCI6MjEwNjA1OTA0Nn0.S5MVJu4X2nz_jg20nWBSGOl28OqYrHZgCvh9UVFVxdQ';
+
+    if (typeof supabase === 'undefined' || !supabase.createClient) {
+      document.addEventListener('DOMContentLoaded', () => {
+        document.body.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:center;height:100vh;width:100%;background:#0f172a;color:#f8fafc;text-align:center;padding:2rem;font-family:sans-serif;">
+            <div>
+              <h2 style="margin-bottom:0.75rem;">⚠️ Failed to load Supabase SDK</h2>
+              <p style="color:#94a3b8;">Check your internet connection or ad-blocker, then refresh the page.</p>
+            </div>
+          </div>`;
+      });
+      throw new Error('Supabase SDK failed to load from CDN.');
+    }
 
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
