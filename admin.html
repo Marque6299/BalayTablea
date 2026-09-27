@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Staff Admin — Balay Tablea</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8D%AB%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* =====================================================================
+   BALAY TABLEA — ADMIN DASHBOARD
+   Brand tokens, layout shell, and component styles
+   ===================================================================== */
+:root{
+  --bg:#1A1210; --bg-2:#2A1E1A; --accent:#C86B49; --accent-2:#5E3D31;
+  --text:#F4F0EC; --text-muted:#BBA89D;
+  --success:#4F7942; --warning:#D4A373; --danger:#A93226;
+  --glass-bg: color-mix(in srgb, var(--bg-2) 55%, transparent);
+  --glass-bg-solid: color-mix(in srgb, var(--bg-2) 94%, black);
+  --glass-border: color-mix(in srgb, var(--text) 9%, transparent);
+  --shadow-lg: 0 24px 60px -14px rgba(0,0,0,.6);
+  --shadow-md: 0 10px 28px -10px rgba(0,0,0,.5);
+  --radius-lg:18px; --radius-md:12px; --radius-sm:8px; --radius-pill:999px;
+  --ease: cubic-bezier(.4,0,.2,1);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; min-height:100vh;
+  background:
+    radial-gradient(at 12% 0%, color-mix(in srgb, var(--accent) 12%, transparent) 0px, transparent 55%),
+    radial-gradient(at 88% 100%, color-mix(in srgb, var(--accent-2) 35%, transparent) 0px, transparent 60%),
+    var(--bg);
+  color:var(--text); font-family:'Archivo',sans-serif; line-height:1.5;
+}
+h1,h2,h3{font-family:'Fraunces',serif; font-weight:600; margin:0; line-height:1.15}
+p{margin:0}
+button,input,select,textarea{font-family:inherit; color:inherit}
+::selection{background:var(--accent); color:var(--bg)}
+a{color:var(--accent)}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+@media (prefers-reduced-motion: reduce){ *{animation:none !important; transition:none !important} }
+
+/* ---- glass ---- */
+.glass{
+  background:var(--glass-bg);
+  backdrop-filter:blur(20px) saturate(140%);
+  -webkit-backdrop-filter:blur(20px) saturate(140%);
+  border:1px solid var(--glass-border);
+  box-shadow:var(--shadow-md);
+}
+
+/* ---- buttons ---- */
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:.5rem; padding:.8rem 1.4rem; border-radius:var(--radius-sm); border:1.5px solid transparent; font-weight:600; font-size:.95rem; cursor:pointer; transition:transform .15s var(--ease),background .2s,border-color .2s,opacity .2s; white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--accent); color:var(--bg)}
+.btn-primary:hover{background:color-mix(in srgb, var(--accent) 85%, white)}
+.btn-ghost{background:transparent; border-color:var(--glass-border); color:var(--text)}
+.btn-ghost:hover{border-color:var(--accent); color:var(--accent)}
+.btn-danger{background:var(--danger); color:var(--text)}
+.btn-danger:hover{background:color-mix(in srgb, var(--danger) 85%, white)}
+.btn-block{width:100%}
+.btn-sm{padding:.5rem .9rem; font-size:.85rem}
+.btn:disabled{opacity:.6; cursor:default; transform:none}
+.btn-link{background:none; border:none; color:var(--accent); font-weight:600; font-size:.85rem; cursor:pointer; padding:.2rem 0}
+.btn-link:hover{text-decoration:underline}
+.btn-link-danger{color:var(--danger)}
+.icon-btn{background:transparent; border:none; color:var(--text); font-size:1.3rem; cursor:pointer; line-height:1; padding:.3rem .6rem; border-radius:var(--radius-sm)}
+.icon-btn:hover{background:var(--glass-border)}
+.spinner{width:14px; height:14px; border:2px solid color-mix(in srgb, currentColor 30%, transparent); border-top-color:currentColor; border-radius:50%; display:inline-block; animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---- fields ---- */
+.field{margin-bottom:1.1rem}
+.field label{display:block; font-size:.82rem; font-weight:600; letter-spacing:.02em; color:var(--text-muted); margin-bottom:.4rem}
+.field input,.field select,.field textarea{width:100%; padding:.8rem .9rem; border-radius:var(--radius-sm); border:1.5px solid var(--glass-border); background:color-mix(in srgb, var(--bg) 60%, transparent); color:var(--text); font-size:.95rem; transition:border-color .2s}
+.field textarea{min-height:90px; resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none; border-color:var(--accent)}
+.field input::placeholder,.field textarea::placeholder{color:var(--text-muted)}
+.field-row{display:grid; grid-template-columns:1fr 1fr; gap:1rem}
+@media (max-width:600px){.field-row{grid-template-columns:1fr}}
+
+/* ---- segmented control ---- */
+.segmented{display:flex; gap:.4rem; background:color-mix(in srgb, var(--bg) 60%, transparent); padding:.3rem; border-radius:var(--radius-sm); border:1.5px solid var(--glass-border)}
+.seg-btn{flex:1; background:transparent; border:none; color:var(--text-muted); padding:.55rem .5rem; border-radius:6px; cursor:pointer; font-weight:600; font-size:.85rem; transition:all .2s}
+.seg-btn.active{background:var(--accent); color:var(--bg)}
+
+/* ---- switch ---- */
+.switch{display:flex; align-items:center; gap:.85rem; cursor:pointer}
+.switch input{display:none}
+.switch-track{width:46px; height:26px; background:var(--accent-2); border-radius:999px; position:relative; transition:background .2s; flex-shrink:0}
+.switch input:checked + .switch-track{background:var(--success)}
+.switch-thumb{position:absolute; top:3px; left:3px; width:20px; height:20px; background:var(--text); border-radius:50%; transition:transform .2s var(--ease)}
+.switch input:checked + .switch-track .switch-thumb{transform:translateX(20px)}
+.switch-label{font-weight:600; font-size:.95rem}
+
+/* ---- badges ---- */
+.badge{display:inline-flex; align-items:center; padding:.35rem .75rem; border-radius:var(--radius-pill); font-size:.72rem; font-weight:700; letter-spacing:.03em}
+.badge-warning{background:color-mix(in srgb, var(--warning) 24%, transparent); color:var(--warning)}
+.badge-accent{background:color-mix(in srgb, var(--accent) 24%, transparent); color:var(--accent)}
+.badge-accent-2{background:var(--accent-2); color:var(--text)}
+.badge-success{background:color-mix(in srgb, var(--success) 26%, transparent); color:var(--success)}
+.badge-danger{background:color-mix(in srgb, var(--danger) 24%, transparent); color:var(--danger)}
+.badge-muted{background:color-mix(in srgb, var(--text) 10%, transparent); color:var(--text-muted)}
+.badge-outline{background:transparent; border:1px solid var(--accent-2); color:var(--text-muted); font-weight:600}
+
+/* ---- pills ---- */
+.pill-row{display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:1.4rem}
+.pill{background:transparent; border:1.5px solid var(--glass-border); color:var(--text-muted); padding:.5rem 1.1rem; border-radius:var(--radius-pill); font-size:.85rem; font-weight:600; cursor:pointer; transition:all .2s}
+.pill:hover{border-color:var(--accent)}
+.pill.active{background:var(--accent); color:var(--bg); border-color:var(--accent)}
+
+/* ---- login ---- */
+.login-screen{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem}
+.login-card{width:100%; max-width:400px; padding:2.6rem 2.2rem; border-radius:var(--radius-lg); text-align:center}
+.login-eyebrow{font-family:'Fraunces',serif; font-style:italic; color:var(--accent); margin-bottom:.4rem; font-size:1rem}
+.login-card h1{font-size:1.7rem; margin-bottom:.6rem}
+.login-sub{color:var(--text-muted); font-size:.92rem; margin-bottom:1.8rem}
+.login-card form{text-align:left}
+.login-error{color:var(--danger); font-size:.85rem; margin:-.4rem 0 1rem; font-weight:600}
+
+/* ---- brand logo slots ---- */
+.brand-logo{display:flex; align-items:center; justify-content:center; gap:.6rem}
+.brand-logo img{max-height:100%; width:auto; object-fit:contain}
+.logo-fallback{display:flex; align-items:center; gap:.6rem}
+.logo-mark{display:inline-flex; align-items:center; justify-content:center; width:2.3em; height:2.3em; border-radius:50%; border:1.5px solid var(--accent); font-family:'Fraunces',serif; font-weight:700; color:var(--accent); font-size:1em; flex-shrink:0}
+.logo-word{font-family:'Fraunces',serif; font-weight:600; font-size:1.1em; white-space:nowrap}
+.logo-word em{font-style:normal; color:var(--accent)}
+.brand-logo-lg{height:64px; margin:0 auto 1.4rem}
+.brand-logo-lg .logo-mark{font-size:1.6rem}
+.brand-logo-sm{height:30px}
+.brand-logo-sm .logo-word{display:none}
+.brand-logo-md{height:48px; margin-bottom:2rem; justify-content:flex-start}
+
+/* ---- shell ---- */
+.app-shell{min-height:100vh; display:flex; flex-direction:column}
+.topbar{display:flex; align-items:center; gap:1rem; padding:.9rem 1.5rem; position:sticky; top:0; z-index:40; background:color-mix(in srgb, var(--bg) 80%, transparent); backdrop-filter:blur(14px); border-bottom:1px solid var(--glass-border)}
+.sidebar-toggle{display:none}
+.topbar-title{font-size:1.15rem; flex:1}
+.topbar-right{display:flex; align-items:center; gap:1rem}
+.topbar-user{color:var(--text-muted); font-size:.85rem}
+.shell-body{display:flex; flex:1; max-width:1900px; margin:0 auto; width:100%}
+.sidebar-backdrop{display:none}
+.sidebar{width:270px; flex-shrink:0; padding:2rem 1.4rem; display:flex; flex-direction:column; border-right:1px solid var(--glass-border); background:var(--glass-bg); backdrop-filter:blur(20px); position:sticky; top:65px; height:calc(100vh - 65px)}
+.nav-menu{display:flex; flex-direction:column; gap:.35rem; flex:1}
+.nav-btn{text-align:left; background:transparent; border:none; color:var(--text-muted); padding:.85rem 1rem; border-radius:var(--radius-sm); font-size:.95rem; font-weight:600; cursor:pointer; transition:all .2s var(--ease)}
+.nav-btn:hover{background:var(--glass-border); color:var(--text)}
+.nav-btn.active{background:var(--accent); color:var(--bg)}
+.sidebar-footer{border-top:1px solid var(--glass-border); padding-top:1.2rem; margin-top:1rem}
+.sidebar-user{font-size:.8rem; color:var(--text-muted); margin-bottom:.7rem; word-break:break-all}
+.main-content{flex:1; padding:2.2rem clamp(1.2rem,3vw,2.6rem); min-width:0}
+
+.panel{display:none; animation:panelIn .35s var(--ease)}
+.panel.active{display:block}
+@keyframes panelIn{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)}}
+.panel-header{margin-bottom:1.8rem}
+.panel-header h2{font-size:1.9rem; margin-bottom:.3rem}
+.panel-header p{color:var(--text-muted); font-size:.95rem}
+.panel-card{padding:1.6rem 1.8rem; border-radius:var(--radius-lg); margin-bottom:1.6rem}
+.panel-card h3{font-size:1.15rem; margin-bottom:1.1rem}
+
+/* ---- stat grid / dashboard ---- */
+.stat-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1.2rem; margin-bottom:1.8rem}
+.stat-card{padding:1.5rem 1.6rem; border-radius:var(--radius-lg); display:flex; flex-direction:column; gap:.5rem}
+.stat-label{color:var(--text-muted); font-size:.85rem; font-weight:600}
+.stat-value{font-family:'Fraunces',serif; font-size:2.4rem; font-weight:700}
+.stat-alert .stat-value{color:var(--warning)}
+.dash-columns{display:grid; grid-template-columns:1fr 1fr; gap:1.6rem}
+@media (max-width:860px){.dash-columns{grid-template-columns:1fr}}
+.mini-list{display:flex; flex-direction:column; gap:.2rem}
+.mini-row{display:flex; justify-content:space-between; align-items:center; padding:.65rem 0; border-bottom:1px solid var(--glass-border); font-size:.9rem; gap:1rem}
+.mini-row:last-child{border-bottom:none}
+.mini-row span:first-child{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.empty-inline{color:var(--text-muted); font-size:.9rem}
+
+/* ---- form cards ---- */
+.card-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:1.5rem; margin-bottom:1.8rem}
+.form-card{padding:1.8rem; border-radius:var(--radius-lg)}
+.form-card h3{font-size:1.2rem; margin-bottom:1.4rem}
+.form-actions{display:flex; gap:.8rem; margin-top:.4rem}
+
+/* ---- filter / bulk bars ---- */
+.filter-bar{display:flex; flex-wrap:wrap; gap:.9rem; align-items:flex-end; padding:1.3rem 1.5rem; border-radius:var(--radius-md); margin-bottom:1.4rem}
+.filter-bar .field{margin-bottom:0; min-width:160px; flex:1}
+.filter-bar .filter-actions{display:flex; gap:.6rem}
+.bulk-bar{display:flex; flex-wrap:wrap; align-items:center; gap:.9rem; padding:1rem 1.4rem; border-radius:var(--radius-md); margin-bottom:1.2rem; border:1px solid var(--accent)}
+.bulk-bar strong{color:var(--accent)}
+.bulk-bar select,.bulk-bar input{padding:.55rem .7rem; border-radius:var(--radius-sm); border:1.5px solid var(--glass-border); background:color-mix(in srgb, var(--bg) 60%, transparent); color:var(--text); font-size:.85rem}
+.bulk-bar input{width:90px}
+
+/* ---- table ---- */
+.table-container{border-radius:var(--radius-lg); overflow:hidden; overflow-x:auto}
+.data-table{width:100%; border-collapse:collapse; min-width:640px}
+.data-table th{background:var(--accent-2); color:var(--text); text-align:left; padding:1rem 1.1rem; font-family:'Fraunces',serif; font-weight:600; font-size:.92rem}
+.data-table td{padding:1.05rem 1.1rem; border-bottom:1px solid var(--glass-border); font-size:.9rem; vertical-align:middle}
+.data-table tbody tr:hover{background:color-mix(in srgb, var(--text) 4%, transparent)}
+.data-table tfoot td{padding:1rem 1.1rem; font-weight:700; border-top:1.5px solid var(--glass-border)}
+.cell-sub{color:var(--text-muted); font-size:.82rem}
+.text-danger{color:var(--danger)}
+.text-success{color:var(--success)}
+.thumb{width:46px; height:46px; border-radius:8px; object-fit:cover; display:block}
+.thumb-empty{display:flex; align-items:center; justify-content:center; background:var(--accent-2); color:var(--text-muted); font-size:.6rem; text-align:center}
+.row-actions{display:flex; gap:.7rem; margin-top:.4rem; flex-wrap:wrap}
+.empty-state{padding:2.4rem 1rem; text-align:center; color:var(--text-muted)}
+.skeleton-bar{height:14px; border-radius:4px; background:linear-gradient(90deg, var(--glass-border) 25%, color-mix(in srgb, var(--text) 12%, transparent) 50%, var(--glass-border) 75%); background-size:200% 100%; animation:shimmer 1.4s infinite}
+@keyframes shimmer{to{background-position:-200% 0}}
+
+/* ---- modal ---- */
+.modal-overlay{position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:100; opacity:0; transition:opacity .2s; padding:1.5rem}
+.modal-overlay.open{opacity:1}
+.modal-overlay[hidden]{display:none}
+.modal{width:100%; max-width:520px; max-height:85vh; overflow-y:auto; border-radius:var(--radius-lg); padding:1.8rem; transform:scale(.96); transition:transform .2s var(--ease)}
+.modal-overlay.open .modal{transform:scale(1)}
+.modal-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:1.3rem; gap:1rem}
+.modal-actions{display:flex; justify-content:flex-end; gap:.8rem; margin-top:1.4rem}
+.modal-text{color:var(--text-muted)}
+.modal-order-meta{margin-bottom:1.2rem; font-size:.9rem}
+.modal-loading{color:var(--text-muted); text-align:center; padding:1.5rem 0}
+
+/* ---- toast ---- */
+.toast-container{position:fixed; bottom:1.5rem; right:1.5rem; z-index:200; display:flex; flex-direction:column; gap:.7rem; max-width:min(90vw,340px)}
+.toast{background:var(--glass-bg-solid); border:1px solid var(--glass-border); backdrop-filter:blur(16px); color:var(--text); padding:.9rem 1.3rem; border-radius:var(--radius-md); box-shadow:var(--shadow-lg); font-size:.9rem; font-weight:600; opacity:0; transform:translateY(10px); transition:all .3s var(--ease); border-left:4px solid var(--accent)}
+.toast.show{opacity:1; transform:translateY(0)}
+.toast-success{border-left-color:var(--success)}
+.toast-danger{border-left-color:var(--danger)}
+
+/* ---- mobile ---- */
+@media (max-width:960px){
+  .sidebar-toggle{display:inline-block}
+  .sidebar{position:fixed; top:0; left:0; height:100vh; z-index:60; transform:translateX(-100%); transition:transform .3s var(--ease); box-shadow:var(--shadow-lg)}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-backdrop{display:block; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:55; opacity:0; pointer-events:none; transition:opacity .2s}
+  .sidebar-backdrop.open{opacity:1; pointer-events:auto}
+  .main-content{padding:1.5rem 1.1rem}
+  .topbar-user{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ===================== LOGIN SCREEN ===================== -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card glass">
+    <div class="brand-logo brand-logo-lg">
+      <img src="img/logo.png" alt="Balay Tablea" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+      <div class="logo-fallback" style="display:none">
+        <span class="logo-mark">BT</span>
+      </div>
+    </div>
+    <p class="login-eyebrow">Staff Access</p>
+    <h1>Balay Tablea Admin</h1>
+    <p class="login-sub">Sign in to manage products, orders, and bookings.</p>
+    <form id="loginForm">
+      <div class="field"><label for="loginEmail">Email</label><input id="loginEmail" type="email" required autocomplete="username"></div>
+      <div class="field"><label for="loginPassword">Password</label><input id="loginPassword" type="password" required autocomplete="current-password"></div>
+      <p class="login-error" id="loginError" hidden></p>
+      <button type="submit" class="btn btn-primary btn-block" id="loginBtn">Sign In</button>
+    </form>
+  </div>
+</div>
+
+<!-- ===================== APP SHELL ===================== -->
+<div class="app-shell" id="appShell" hidden>
+  <header class="topbar">
+    <button class="icon-btn sidebar-toggle" id="sidebarToggle" aria-label="Toggle menu">&#9776;</button>
+    <div class="brand-logo brand-logo-sm">
+      <img src="img/logo.png" alt="Balay Tablea" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+      <div class="logo-fallback" style="display:none"><span class="logo-mark">BT</span></div>
+    </div>
+    <h1 class="topbar-title" id="pageTitle">Dashboard</h1>
+    <div class="topbar-right">
+      <span class="topbar-user" id="userEmail"></span>
+      <button class="btn btn-ghost btn-sm" id="logoutBtn">Log Out</button>
+    </div>
+  </header>
+
+  <div class="shell-body">
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-logo brand-logo-md">
+        <img src="img/logo.png" alt="Balay Tablea" style="max-height:48px" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="logo-fallback" style="display:none">
+          <span class="logo-mark">BT</span>
+          <span class="logo-word">Balay <em>Tablea</em></span>
+        </div>
+      </div>
+      <nav class="nav-menu">
+        <button class="nav-btn active" data-tab="dashboard">Dashboard</button>
+        <button class="nav-btn" data-tab="products">Products</button>
+        <button class="nav-btn" data-tab="inventory">Inventory</button>
+        <button class="nav-btn" data-tab="orders">Orders</button>
+        <button class="nav-btn" data-tab="bookings">Visit Bookings</button>
+        <button class="nav-btn" data-tab="settings">Settings</button>
+      </nav>
+      <div class="sidebar-footer">
+        <p class="sidebar-user" id="sidebarUserEmail"></p>
+        <button class="btn btn-ghost btn-block btn-sm" id="logoutBtnSidebar">Log Out</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+
+      <!-- ================= DASHBOARD ================= -->
+      <section class="panel active" id="panel-dashboard">
+        <div class="panel-header">
+          <h2>Good to see you.</h2>
+          <p>Here's how the shop is doing right now.</p>
+        </div>
+        <div class="stat-grid" id="statGrid"></div>
+        <div class="dash-columns">
+          <div class="panel-card glass">
+            <h3>Recent Orders</h3>
+            <div class="mini-list" id="recentOrdersList"></div>
+          </div>
+          <div class="panel-card glass">
+            <h3>Upcoming Visits</h3>
+            <div class="mini-list" id="upcomingVisitsList"></div>
+          </div>
+        </div>
+        <div class="panel-card glass">
+          <h3>Low Stock Alerts</h3>
+          <div class="mini-list" id="dashLowStockList"></div>
+        </div>
+      </section>
+
+      <!-- ================= PRODUCTS ================= -->
+      <section class="panel" id="panel-products">
+        <div class="panel-header">
+          <h2>Products</h2>
+          <p>Manage your catalog, pricing, categories, and stock status.</p>
+        </div>
+
+        <div class="card-grid">
+          <div class="form-card glass">
+            <h3 id="productFormTitle">Add a Product</h3>
+            <form id="productForm">
+              <input type="hidden" id="prodId">
+              <div class="field"><label for="prodName">Product Name</label><input id="prodName" required></div>
+              <div class="field-row">
+                <div class="field"><label for="prodSlug">Web Link (no spaces)</label><input id="prodSlug" placeholder="tablea-rolls-500g" required></div>
+                <div class="field">
+                  <label for="prodCategory">Category</label>
+                  <input id="prodCategory" list="categoryList" placeholder="e.g. Tablea Rolls">
+                  <datalist id="categoryList"></datalist>
+                </div>
+              </div>
+              <div class="field"><label for="prodImage">Image Link</label><input id="prodImage" placeholder="https://your-image-link.com/img.jpg"></div>
+              <div class="field-row">
+                <div class="field"><label for="prodPrice">Price (&#8369;)</label><input id="prodPrice" type="number" step="0.01" min="0" required></div>
+                <div class="field"><label for="prodStock">Current Stock</label><input id="prodStock" type="number" min="0" required></div>
+              </div>
+              <div class="field"><label for="prodThreshold">Low-Stock Threshold</label><input id="prodThreshold" type="number" min="0" value="5"></div>
+              <div class="field">
+                <label>Status</label>
+                <div class="segmented" id="prodStatusSeg">
+                  <button type="button" class="seg-btn active" data-value="draft">Draft</button>
+                  <button type="button" class="seg-btn" data-value="active">Active</button>
+                  <button type="button" class="seg-btn" data-value="archived">Archived</button>
+                </div>
+                <input type="hidden" id="prodStatus" value="draft">
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Product</button>
+                <button type="button" class="btn btn-ghost" id="prodResetBtn">Clear</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="bulk-bar glass" id="bulkBar" hidden>
+          <strong id="bulkCount">0 selected</strong>
+          <select id="bulkMode"><option value="increase">Increase</option><option value="decrease">Decrease</option></select>
+          <select id="bulkType"><option value="percent">by %</option><option value="fixed">by &#8369;</option></select>
+          <input id="bulkAmount" type="number" min="0" step="0.01" placeholder="Amount">
+          <button class="btn btn-primary btn-sm" id="bulkApplyBtn">Apply to Selected</button>
+          <button class="btn btn-ghost btn-sm" id="bulkClearBtn">Clear Selection</button>
+        </div>
+
+        <div class="table-container glass">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="selectAllProducts"></th>
+                <th>Image</th><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="productsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= INVENTORY ================= -->
+      <section class="panel" id="panel-inventory">
+        <div class="panel-header">
+          <h2>Inventory</h2>
+          <p>Log stock movements and keep an eye on what's running low.</p>
+        </div>
+
+        <div class="panel-card glass">
+          <h3>Low Stock Alerts</h3>
+          <div class="mini-list" id="inventoryLowStock"></div>
+        </div>
+
+        <div class="card-grid">
+          <div class="form-card glass">
+            <h3>Add or Remove Stock</h3>
+            <form id="inventoryForm">
+              <div class="field"><label for="invProductId">Product</label><select id="invProductId" required></select></div>
+              <div class="field-row">
+                <div class="field"><label for="invChange">Amount (+/-)</label><input id="invChange" type="number" required placeholder="50 or -5"></div>
+                <div class="field">
+                  <label for="invType">Type</label>
+                  <select id="invType">
+                    <option value="restock">Restock</option>
+                    <option value="sale">Sale</option>
+                    <option value="damaged">Damaged</option>
+                    <option value="correction">Correction</option>
+                    <option value="return">Return</option>
+                    <option value="adjustment">Adjustment</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field"><label for="invReason">Reason</label><input id="invReason" required placeholder="e.g. New delivery arrived"></div>
+              <button type="submit" class="btn btn-primary">Save Stock Update</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="filter-bar glass">
+          <div class="field"><label for="invFilterProduct">Product</label><select id="invFilterProduct"><option value="">All products</option></select></div>
+          <div class="field">
+            <label for="invFilterType">Type</label>
+            <select id="invFilterType">
+              <option value="">All types</option>
+              <option value="restock">Restock</option>
+              <option value="sale">Sale</option>
+              <option value="damaged">Damaged</option>
+              <option value="correction">Correction</option>
+              <option value="return">Return</option>
+              <option value="adjustment">Adjustment</option>
+            </select>
+          </div>
+          <div class="field"><label for="invFilterFrom">From</label><input id="invFilterFrom" type="date"></div>
+          <div class="field"><label for="invFilterTo">To</label><input id="invFilterTo" type="date"></div>
+          <div class="filter-actions">
+            <button class="btn btn-primary btn-sm" id="invFilterApply">Apply</button>
+            <button class="btn btn-ghost btn-sm" id="invFilterReset">Reset</button>
+          </div>
+        </div>
+
+        <div class="table-container glass">
+          <table class="data-table">
+            <thead><tr><th>Date &amp; Time</th><th>Product</th><th>Change</th><th>Type</th><th>Reason</th></tr></thead>
+            <tbody id="inventoryTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= ORDERS ================= -->
+      <section class="panel" id="panel-orders">
+        <div class="panel-header">
+          <h2>Orders</h2>
+          <p>Track fulfillment from pending through completed.</p>
+        </div>
+
+        <div class="field" style="max-width:340px">
+          <label for="orderSearch">Search customer</label>
+          <input id="orderSearch" placeholder="Name or email">
+        </div>
+
+        <div class="pill-row" id="orderStatusPills">
+          <button class="pill active" data-status="all">All</button>
+          <button class="pill" data-status="pending">Pending</button>
+          <button class="pill" data-status="processing">Processing</button>
+          <button class="pill" data-status="shipped">Shipped</button>
+          <button class="pill" data-status="completed">Completed</button>
+          <button class="pill" data-status="cancelled">Cancelled</button>
+        </div>
+
+        <div class="table-container glass">
+          <table class="data-table">
+            <thead><tr><th>Order #</th><th>Customer</th><th>Total</th><th>Status</th><th>Date</th><th>Items</th></tr></thead>
+            <tbody id="ordersTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= VISIT BOOKINGS ================= -->
+      <section class="panel" id="panel-bookings">
+        <div class="panel-header">
+          <h2>Visit Bookings</h2>
+          <p>Farm and shop tour requests from visit.html — or added here by phone.</p>
+        </div>
+
+        <div class="card-grid">
+          <div class="form-card glass">
+            <h3>Add a Booking</h3>
+            <form id="bookingForm">
+              <div class="field"><label for="bkName">Visitor Name</label><input id="bkName" required></div>
+              <div class="field-row">
+                <div class="field"><label for="bkEmail">Email</label><input id="bkEmail" type="email"></div>
+                <div class="field"><label for="bkPhone">Phone</label><input id="bkPhone"></div>
+              </div>
+              <div class="field-row">
+                <div class="field"><label for="bkDate">Visit Date</label><input id="bkDate" type="date" required></div>
+                <div class="field"><label for="bkTime">Time Slot</label><input id="bkTime" placeholder="Morning (9-11 AM)"></div>
+              </div>
+              <div class="field-row">
+                <div class="field"><label for="bkPax">Pax</label><input id="bkPax" type="number" min="1" value="1" required></div>
+                <div class="field">
+                  <label for="bkType">Visit Type</label>
+                  <select id="bkType">
+                    <option value="workshop">Workshop</option>
+                    <option value="farm_visit">Farm Visit</option>
+                    <option value="both">Both</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field"><label for="bkNotes">Visitor Notes</label><textarea id="bkNotes" placeholder="Anything they mentioned"></textarea></div>
+              <button type="submit" class="btn btn-primary">Save Booking</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="pill-row" id="bookingStatusPills">
+          <button class="pill active" data-status="all">All</button>
+          <button class="pill" data-status="pending">Pending</button>
+          <button class="pill" data-status="approved">Approved</button>
+          <button class="pill" data-status="completed">Completed</button>
+          <button class="pill" data-status="declined">Declined</button>
+          <button class="pill" data-status="cancelled">Cancelled</button>
+        </div>
+
+        <div class="table-container glass">
+          <table class="data-table">
+            <thead><tr><th>Visitor</th><th>Visit Date</th><th>Pax</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="bookingsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= SETTINGS ================= -->
+      <section class="panel" id="panel-settings">
+        <div class="panel-header">
+          <h2>System Settings</h2>
+          <p>Global variables used across the storefront and admin tools.</p>
+        </div>
+
+        <div class="form-card glass" style="max-width:520px">
+          <form id="settingsForm">
+            <div class="field">
+              <label class="switch">
+                <input type="checkbox" id="setStoreOpen">
+                <span class="switch-track"><span class="switch-thumb"></span></span>
+                <span class="switch-label">Store is open for orders &amp; bookings</span>
+              </label>
+            </div>
+            <div class="field"><label for="setContactEmail">Contact Email</label><input id="setContactEmail" type="email"></div>
+            <div class="field"><label for="setContactPhone">Contact Phone</label><input id="setContactPhone"></div>
+            <div class="field"><label for="setContactAddress">Contact Address</label><input id="setContactAddress"></div>
+            <div class="field"><label for="setShippingRate">Flat-Rate Shipping (&#8369;)</label><input id="setShippingRate" type="number" step="0.01" min="0"></div>
+            <button type="submit" class="btn btn-primary">Save Settings</button>
+          </form>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ===================== MODAL ===================== -->
+<div class="modal-overlay" id="modalOverlay" hidden>
+  <div class="modal glass" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <h3 id="modalTitle"></h3>
+      <button class="icon-btn" id="modalCloseBtn" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   SUPABASE CLIENT
+   ===================================================================== */
+const SUPABASE_URL = 'https://mmbdewpfmybfkczczdhn.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tYmRld3BmbXliZmtjemN6ZGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA0ODMwNDYsImV4cCI6MjEwNjA1OTA0Nn0.S5MVJu4X2nz_jg20nWBSGOl28OqYrHZgCvh9UVFVxdQ';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* =====================================================================
+   STATE
+   ===================================================================== */
+const state = {
+  session: null,
+  products: [], productsById: {}, selectedProductIds: new Set(),
+  orders: [], ordersById: {}, ordersFilter: { status: 'all', search: '' },
+  bookings: [], bookingsById: {}, bookingsFilter: { status: 'all' },
+  inventoryFilter: { productId: '', type: '', from: '', to: '' },
+};
+
+/* =====================================================================
+   SUPABASE API — namespaced by entity
+   ===================================================================== */
+const api = {
+  auth: {
+    getSession: () => db.auth.getSession(),
+    signIn: (email, password) => db.auth.signInWithPassword({ email, password }),
+    signOut: () => db.auth.signOut(),
+  },
+  products: {
+    list: () => db.from('products').select('*').order('created_at', { ascending: false }),
+    save: (payload, id) => id
+      ? db.from('products').update(payload).eq('id', id)
+      : db.from('products').insert([payload]),
+    updatePrice: (id, unit_price) => db.from('products').update({ unit_price }).eq('id', id),
+  },
+  inventory: {
+    list: (f) => {
+      let q = db.from('inventory_logs').select('*, products(name)').order('created_at', { ascending: false });
+      if (f.productId) q = q.eq('product_id', f.productId);
+      if (f.type) q = q.eq('change_type', f.type);
+      if (f.from) q = q.gte('created_at', f.from);
+      if (f.to) q = q.lte('created_at', f.to + 'T23:59:59');
+      return q;
+    },
+    log: (payload) => db.from('inventory_logs').insert([payload]),
+  },
+  orders: {
+    list: (f) => {
+      let q = db.from('orders').select('*').order('created_at', { ascending: false });
+      if (f.status && f.status !== 'all') q = q.eq('status', f.status);
+      if (f.search) {
+        const term = f.search.replace(/[,()%]/g, '');
+        q = q.or(`customer_name.ilike.%${term}%,customer_email.ilike.%${term}%`);
+      }
+      return q;
+    },
+    updateStatus: (id, status) => db.from('orders').update({ status }).eq('id', id),
+    items: (orderId) => db.from('order_items').select('*').eq('order_id', orderId).order('created_at'),
+    recent: (n) => db.from('orders').select('*').order('created_at', { ascending: false }).limit(n),
+    countByStatus: (status) => db.from('orders').select('id', { count: 'exact', head: true }).eq('status', status),
+  },
+  bookings: {
+    list: (f) => {
+      let q = db.from('visit_bookings').select('*').order('visit_date', { ascending: true });
+      if (f.status && f.status !== 'all') q = q.eq('status', f.status);
+      return q;
+    },
+    create: (payload) => db.from('visit_bookings').insert([payload]),
+    updateStatus: (id, status) => db.from('visit_bookings').update({ status }).eq('id', id),
+    updateNotes: (id, admin_notes) => db.from('visit_bookings').update({ admin_notes }).eq('id', id),
+    upcoming: (n) => db.from('visit_bookings').select('*').gte('visit_date', new Date().toISOString().slice(0, 10)).order('visit_date', { ascending: true }).limit(n),
+    countByStatus: (status) => db.from('visit_bookings').select('id', { count: 'exact', head: true }).eq('status', status),
+  },
+  settings: {
+    list: () => db.from('site_settings').select('*'),
+    save: (rows) => db.from('site_settings').upsert(rows, { onConflict: 'key' }),
+  },
+};
+
+/* =====================================================================
+   LOOKUP TABLES
+   ===================================================================== */
+const PAGE_TITLES = { dashboard: 'Dashboard', products: 'Products', inventory: 'Inventory', orders: 'Orders', bookings: 'Visit Bookings', settings: 'Settings' };
+const PRODUCT_STATUS_META = {
+  draft: { label: 'Draft', badge: 'badge-muted' },
+  active: { label: 'Active', badge: 'badge-success' },
+  archived: { label: 'Archived', badge: 'badge-outline' },
+};
+const ORDER_PIPELINE = ['pending', 'processing', 'shipped', 'completed'];
+const ORDER_STATUS_META = {
+  pending: { label: 'Pending', badge: 'badge-warning' },
+  processing: { label: 'Processing', badge: 'badge-accent' },
+  shipped: { label: 'Shipped', badge: 'badge-accent-2' },
+  completed: { label: 'Completed', badge: 'badge-success' },
+  cancelled: { label: 'Cancelled', badge: 'badge-danger' },
+};
+const BOOKING_STATUS_META = {
+  pending: { label: 'Pending Review', badge: 'badge-warning' },
+  approved: { label: 'Approved', badge: 'badge-accent' },
+  completed: { label: 'Completed', badge: 'badge-success' },
+  declined: { label: 'Declined', badge: 'badge-danger' },
+  cancelled: { label: 'Cancelled', badge: 'badge-muted' },
+};
+const BOOKING_TYPE_LABELS = { workshop: 'Workshop', farm_visit: 'Farm Visit', both: 'Workshop + Farm' };
+const DEFAULT_CATEGORIES = ['Tablea Rolls', 'Hot Tsokolate Mix', 'Raw Cacao Nibs', 'Pasalubong Gift Sets', 'Otap'];
+
+/* =====================================================================
+   HELPERS
+   ===================================================================== */
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function formatCurrency(n) {
+  return '\u20B1' + (Number(n) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function formatDate(d) { return new Date(d).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }); }
+function formatDateTime(d) { return new Date(d).toLocaleString('en-PH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+function debounce(fn, delay) { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); }; }
+function setButtonLoading(btn, loading, loadingText) {
+  if (!btn) return;
+  if (loading) {
+    btn.dataset.originalHtml = btn.innerHTML;
+    btn.innerHTML = `<span class="spinner"></span>${escapeHtml(loadingText || 'Working\u2026')}`;
+    btn.disabled = true;
+  } else {
+    btn.innerHTML = btn.dataset.originalHtml || btn.innerHTML;
+    btn.disabled = false;
+  }
+}
+function emptyRow(colspan, message) { return `<tr><td colspan="${colspan}"><div class="empty-state"><p>${escapeHtml(message)}</p></div></td></tr>`; }
+function skeletonRows(colspan, count) {
+  return Array.from({ length: count || 3 }).map(() => `<tr><td colspan="${colspan}"><div class="skeleton-bar"></div></td></tr>`).join('');
+}
+function setSegmented(containerId, hiddenId, value) {
+  document.getElementById(containerId).querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b.dataset.value === value));
+  document.getElementById(hiddenId).value = value;
+}
+
+/* ---- toast ---- */
+function showToast(message, type) {
+  const container = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = `toast toast-${type || 'success'}`;
+  el.innerHTML = `<span>${escapeHtml(message)}</span>`;
+  container.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 3800);
+}
+
+/* ---- modal ---- */
+function openModal(title, bodyHtml) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = bodyHtml;
+  const overlay = document.getElementById('modalOverlay');
+  overlay.hidden = false;
+  requestAnimationFrame(() => overlay.classList.add('open'));
+}
+function closeModal() {
+  const overlay = document.getElementById('modalOverlay');
+  overlay.classList.remove('open');
+  setTimeout(() => { overlay.hidden = true; document.getElementById('modalBody').innerHTML = ''; }, 200);
+}
+function confirmAction(message, onConfirm, confirmLabel) {
+  openModal('Please Confirm', `
+    <p class="modal-text">${escapeHtml(message)}</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="confirmCancelBtn">Never Mind</button>
+      <button class="btn btn-danger" id="confirmOkBtn">${escapeHtml(confirmLabel || 'Confirm')}</button>
+    </div>`);
+  document.getElementById('confirmCancelBtn').addEventListener('click', closeModal);
+  document.getElementById('confirmOkBtn').addEventListener('click', () => { closeModal(); onConfirm(); });
+}
+document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+document.getElementById('modalOverlay').addEventListener('click', (e) => { if (e.target.id === 'modalOverlay') closeModal(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+/* =====================================================================
+   AUTH
+   ===================================================================== */
+async function initAuth() {
+  const { data: { session } } = await api.auth.getSession();
+  handleSessionChange(session);
+  db.auth.onAuthStateChange((_event, s) => handleSessionChange(s));
+}
+let dashboardInitialized = false;
+function handleSessionChange(session) {
+  state.session = session;
+  if (session) {
+    document.getElementById('loginScreen').hidden = true;
+    document.getElementById('appShell').hidden = false;
+    const email = session.user && session.user.email || '';
+    document.getElementById('userEmail').textContent = email;
+    document.getElementById('sidebarUserEmail').textContent = email;
+    if (!dashboardInitialized) {
+      dashboardInitialized = true;
+      loadProducts().then(() => switchTab('dashboard'));
+    }
+  } else {
+    dashboardInitialized = false;
+    document.getElementById('loginScreen').hidden = false;
+    document.getElementById('appShell').hidden = true;
+  }
+}
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('loginBtn');
+  const errEl = document.getElementById('loginError');
+  errEl.hidden = true;
+  setButtonLoading(btn, true, 'Signing in\u2026');
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const { error } = await api.auth.signIn(email, password);
+  setButtonLoading(btn, false);
+  if (error) { errEl.textContent = error.message; errEl.hidden = false; }
+});
+document.getElementById('logoutBtn').addEventListener('click', () => api.auth.signOut());
+document.getElementById('logoutBtnSidebar').addEventListener('click', () => api.auth.signOut());
+
+/* =====================================================================
+   NAVIGATION
+   ===================================================================== */
+document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+function switchTab(tab) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`panel-${tab}`).classList.add('active');
+  document.getElementById('pageTitle').textContent = PAGE_TITLES[tab];
+  closeSidebarMobile();
+  if (tab === 'dashboard') loadDashboard();
+  if (tab === 'products') loadProducts();
+  if (tab === 'inventory') loadInventory();
+  if (tab === 'orders') loadOrders();
+  if (tab === 'bookings') loadBookings();
+  if (tab === 'settings') loadSettings();
+}
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarBackdrop').classList.toggle('open');
+});
+document.getElementById('sidebarBackdrop').addEventListener('click', closeSidebarMobile);
+function closeSidebarMobile() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarBackdrop').classList.remove('open');
+}
+
+/* =====================================================================
+   DASHBOARD
+   ===================================================================== */
+async function loadDashboard() {
+  document.getElementById('statGrid').innerHTML = Array.from({ length: 4 }).map(() => `<div class="stat-card glass"><div class="skeleton-bar" style="width:60%"></div><div class="skeleton-bar" style="width:40%;height:28px"></div></div>`).join('');
+  const [prodRes, pendingOrdersRes, pendingBookingsRes, recentOrdersRes, upcomingRes] = await Promise.all([
+    db.from('products').select('id,name,stock_quantity,low_stock_threshold').eq('status', 'active'),
+    api.orders.countByStatus('pending'),
+    api.bookings.countByStatus('pending'),
+    api.orders.recent(5),
+    api.bookings.upcoming(5),
+  ]);
+  const lowStockItems = (prodRes.data || []).filter(p => p.stock_quantity <= p.low_stock_threshold);
+  document.getElementById('statGrid').innerHTML = `
+    <div class="stat-card glass"><span class="stat-label">Active Products</span><span class="stat-value">${(prodRes.data || []).length}</span></div>
+    <div class="stat-card glass ${lowStockItems.length ? 'stat-alert' : ''}"><span class="stat-label">Low Stock Items</span><span class="stat-value">${lowStockItems.length}</span></div>
+    <div class="stat-card glass"><span class="stat-label">Pending Orders</span><span class="stat-value">${pendingOrdersRes.count || 0}</span></div>
+    <div class="stat-card glass"><span class="stat-label">Pending Bookings</span><span class="stat-value">${pendingBookingsRes.count || 0}</span></div>`;
+
+  const recentList = document.getElementById('recentOrdersList');
+  const recent = recentOrdersRes.data || [];
+  recentList.innerHTML = recent.length
+    ? recent.map(o => `<div class="mini-row"><span>#${escapeHtml(o.order_number)} \u2014 ${escapeHtml(o.customer_name)}</span><span class="badge ${(ORDER_STATUS_META[o.status] || ORDER_STATUS_META.pending).badge}">${(ORDER_STATUS_META[o.status] || ORDER_STATUS_META.pending).label}</span></div>`).join('')
+    : `<p class="empty-inline">No orders yet.</p>`;
+
+  const upcomingList = document.getElementById('upcomingVisitsList');
+  const upcoming = upcomingRes.data || [];
+  upcomingList.innerHTML = upcoming.length
+    ? upcoming.map(b => `<div class="mini-row"><span>${escapeHtml(b.visitor_name)} \u2014 ${formatDate(b.visit_date)}</span><span class="cell-sub">${b.pax} pax</span></div>`).join('')
+    : `<p class="empty-inline">No upcoming visits scheduled.</p>`;
+
+  const dashLow = document.getElementById('dashLowStockList');
+  dashLow.innerHTML = lowStockItems.length
+    ? lowStockItems.map(p => `<div class="mini-row"><span>${escapeHtml(p.name)}</span><span class="text-danger">${p.stock_quantity} left</span></div>`).join('')
+    : `<p class="empty-inline">All active products are above their stock threshold.</p>`;
+}
+
+/* =====================================================================
+   PRODUCTS
+   ===================================================================== */
+async function loadProducts() {
+  const tbody = document.getElementById('productsTableBody');
+  if (tbody) tbody.innerHTML = skeletonRows(8, 3);
+  const { data, error } = await api.products.list();
+  if (error) { showToast(error.message, 'danger'); return state.products; }
+  state.products = data || [];
+  state.productsById = Object.fromEntries(state.products.map(p => [p.id, p]));
+  renderProductsTable();
+  renderProductSelectOptions();
+  renderCategoryDatalist();
+  return state.products;
+}
+function renderProductsTable() {
+  const tbody = document.getElementById('productsTableBody');
+  if (!state.products.length) { tbody.innerHTML = emptyRow(8, 'No products yet \u2014 add your first one above.'); return; }
+  tbody.innerHTML = state.products.map(p => {
+    const meta = PRODUCT_STATUS_META[p.status] || PRODUCT_STATUS_META.draft;
+    const low = p.stock_quantity <= p.low_stock_threshold;
+    const img = p.image_url ? `<img class="thumb" src="${escapeHtml(p.image_url)}" alt="">` : `<div class="thumb thumb-empty">No Img</div>`;
+    return `<tr>
+      <td><input type="checkbox" class="row-check" data-id="${p.id}" ${state.selectedProductIds.has(p.id) ? 'checked' : ''}></td>
+      <td>${img}</td>
+      <td><strong>${escapeHtml(p.name)}</strong><br><span class="cell-sub">${escapeHtml(p.slug)}</span></td>
+      <td>${p.category ? `<span class="badge badge-outline">${escapeHtml(p.category)}</span>` : '<span class="cell-sub">\u2014</span>'}</td>
+      <td>${formatCurrency(p.unit_price)}</td>
+      <td class="${low ? 'text-danger' : ''}">${p.stock_quantity}${low ? ' \u26A0' : ''}</td>
+      <td><span class="badge ${meta.badge}">${meta.label}</span></td>
+      <td><button class="btn btn-ghost btn-sm" onclick="editProduct('${p.id}')">Edit</button></td>
+    </tr>`;
+  }).join('');
+  tbody.querySelectorAll('.row-check').forEach(cb => cb.addEventListener('change', onProductCheck));
+}
+function renderProductSelectOptions() {
+  const opts = state.products.map(p => `<option value="${p.id}">${escapeHtml(p.name)} (${p.stock_quantity} in stock)</option>`).join('');
+  const invSelect = document.getElementById('invProductId');
+  const filterSelect = document.getElementById('invFilterProduct');
+  if (invSelect) invSelect.innerHTML = opts;
+  if (filterSelect) filterSelect.innerHTML = `<option value="">All products</option>` + opts;
+}
+function renderCategoryDatalist() {
+  const existing = state.products.map(p => p.category).filter(Boolean);
+  const all = [...new Set([...DEFAULT_CATEGORIES, ...existing])];
+  document.getElementById('categoryList').innerHTML = all.map(c => `<option value="${escapeHtml(c)}">`).join('');
+}
+document.getElementById('prodStatusSeg').querySelectorAll('.seg-btn').forEach(btn => {
+  btn.addEventListener('click', () => setSegmented('prodStatusSeg', 'prodStatus', btn.dataset.value));
+});
+function resetProductForm() {
+  document.getElementById('productForm').reset();
+  document.getElementById('prodId').value = '';
+  document.getElementById('prodThreshold').value = 5;
+  setSegmented('prodStatusSeg', 'prodStatus', 'draft');
+  document.getElementById('productFormTitle').textContent = 'Add a Product';
+}
+document.getElementById('prodResetBtn').addEventListener('click', resetProductForm);
+function editProduct(id) {
+  const p = state.productsById[id];
+  if (!p) return;
+  document.getElementById('prodId').value = p.id;
+  document.getElementById('prodName').value = p.name;
+  document.getElementById('prodSlug').value = p.slug;
+  document.getElementById('prodImage').value = p.image_url || '';
+  document.getElementById('prodCategory').value = p.category || '';
+  document.getElementById('prodPrice').value = p.unit_price;
+  document.getElementById('prodStock').value = p.stock_quantity;
+  document.getElementById('prodThreshold').value = p.low_stock_threshold;
+  setSegmented('prodStatusSeg', 'prodStatus', p.status);
+  document.getElementById('productFormTitle').textContent = `Editing \u201C${p.name}\u201D`;
+  document.getElementById('panel-products').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+document.getElementById('productForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type=submit]');
+  setButtonLoading(btn, true, 'Saving\u2026');
+  const id = document.getElementById('prodId').value;
+  const payload = {
+    name: document.getElementById('prodName').value,
+    slug: document.getElementById('prodSlug').value,
+    image_url: document.getElementById('prodImage').value || null,
+    category: document.getElementById('prodCategory').value || null,
+    unit_price: parseFloat(document.getElementById('prodPrice').value),
+    stock_quantity: parseInt(document.getElementById('prodStock').value, 10),
+    low_stock_threshold: parseInt(document.getElementById('prodThreshold').value, 10) || 5,
+    status: document.getElementById('prodStatus').value,
+  };
+  const { error } = await api.products.save(payload, id || null);
+  setButtonLoading(btn, false);
+  if (error) { showToast(error.message, 'danger'); return; }
+  showToast(id ? 'Product updated.' : 'Product added.', 'success');
+  resetProductForm();
+  loadProducts();
+});
+
+/* ---- bulk selection & pricing ---- */
+function onProductCheck(e) {
+  const id = e.target.dataset.id;
+  if (e.target.checked) state.selectedProductIds.add(id); else state.selectedProductIds.delete(id);
+  renderBulkBar();
+}
+function renderBulkBar() {
+  const bar = document.getElementById('bulkBar');
+  const n = state.selectedProductIds.size;
+  bar.hidden = n === 0;
+  if (n) document.getElementById('bulkCount').textContent = `${n} selected`;
+}
+document.getElementById('selectAllProducts').addEventListener('change', (e) => {
+  state.products.forEach(p => e.target.checked ? state.selectedProductIds.add(p.id) : state.selectedProductIds.delete(p.id));
+  renderProductsTable();
+  renderBulkBar();
+});
+document.getElementById('bulkClearBtn').addEventListener('click', () => {
+  state.selectedProductIds.clear();
+  document.getElementById('selectAllProducts').checked = false;
+  renderProductsTable();
+  renderBulkBar();
+});
+document.getElementById('bulkApplyBtn').addEventListener('click', async () => {
+  const mode = document.getElementById('bulkMode').value;
+  const type = document.getElementById('bulkType').value;
+  const amount = parseFloat(document.getElementById('bulkAmount').value);
+  if (isNaN(amount) || amount <= 0) { showToast('Enter a valid amount.', 'danger'); return; }
+  const btn = document.getElementById('bulkApplyBtn');
+  setButtonLoading(btn, true, 'Updating\u2026');
+  const ids = [...state.selectedProductIds];
+  const results = await Promise.all(ids.map(id => {
+    const p = state.productsById[id];
+    const delta = type === 'percent' ? p.unit_price * (amount / 100) : amount;
+    let newPrice = mode === 'increase' ? p.unit_price + delta : p.unit_price - delta;
+    newPrice = Math.max(0, Math.round(newPrice * 100) / 100);
+    return api.products.updatePrice(id, newPrice);
+  }));
+  setButtonLoading(btn, false);
+  const failed = results.filter(r => r.error);
+  showToast(failed.length ? `${failed.length} update(s) failed.` : `Updated pricing for ${ids.length} product(s).`, failed.length ? 'danger' : 'success');
+  state.selectedProductIds.clear();
+  document.getElementById('bulkAmount').value = '';
+  loadProducts();
+});
+
+/* =====================================================================
+   INVENTORY
+   ===================================================================== */
+function lowStockProducts() {
+  return state.products.filter(p => p.status === 'active' && p.stock_quantity <= p.low_stock_threshold);
+}
+function renderLowStockBanner(targetId) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  const items = lowStockProducts();
+  el.innerHTML = items.length
+    ? items.map(p => `<div class="mini-row"><span>${escapeHtml(p.name)}</span><span class="text-danger">${p.stock_quantity} left</span></div>`).join('')
+    : `<p class="empty-inline">All active products are above their stock threshold.</p>`;
+}
+async function loadInventory() {
+  const tbody = document.getElementById('inventoryTableBody');
+  tbody.innerHTML = skeletonRows(5, 3);
+  const { data, error } = await api.inventory.list(state.inventoryFilter);
+  if (error) { showToast(error.message, 'danger'); return; }
+  const rows = data || [];
+  tbody.innerHTML = rows.length ? rows.map(log => {
+    const positive = log.change_amount > 0;
+    return `<tr>
+      <td class="cell-sub">${formatDateTime(log.created_at)}</td>
+      <td><strong>${escapeHtml(log.products && log.products.name || 'Unknown item')}</strong></td>
+      <td class="${positive ? 'text-success' : 'text-danger'}"><strong>${positive ? '+' : ''}${log.change_amount}</strong></td>
+      <td><span class="badge badge-outline">${escapeHtml(log.change_type)}</span></td>
+      <td>${escapeHtml(log.reason || '\u2014')}</td>
+    </tr>`;
+  }).join('') : emptyRow(5, 'No stock movements match these filters.');
+  renderLowStockBanner('inventoryLowStock');
+}
+document.getElementById('inventoryForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type=submit]');
+  setButtonLoading(btn, true, 'Saving\u2026');
+  const payload = {
+    product_id: document.getElementById('invProductId').value,
+    change_amount: parseInt(document.getElementById('invChange').value, 10),
+    change_type: document.getElementById('invType').value,
+    reason: document.getElementById('invReason').value,
+  };
+  const { error } = await api.inventory.log(payload);
+  setButtonLoading(btn, false);
+  if (error) { showToast(error.message, 'danger'); return; }
+  e.target.reset();
+  showToast('Stock movement recorded.', 'success');
+  loadInventory();
+  loadProducts();
+});
+document.getElementById('invFilterApply').addEventListener('click', () => {
+  state.inventoryFilter = {
+    productId: document.getElementById('invFilterProduct').value,
+    type: document.getElementById('invFilterType').value,
+    from: document.getElementById('invFilterFrom').value,
+    to: document.getElementById('invFilterTo').value,
+  };
+  loadInventory();
+});
+document.getElementById('invFilterReset').addEventListener('click', () => {
+  ['invFilterProduct', 'invFilterType', 'invFilterFrom', 'invFilterTo'].forEach(id => document.getElementById(id).value = '');
+  state.inventoryFilter = { productId: '', type: '', from: '', to: '' };
+  loadInventory();
+});
+
+/* =====================================================================
+   ORDERS
+   ===================================================================== */
+async function loadOrders() {
+  const tbody = document.getElementById('ordersTableBody');
+  tbody.innerHTML = skeletonRows(6, 3);
+  const { data, error } = await api.orders.list(state.ordersFilter);
+  if (error) { showToast(error.message, 'danger'); return; }
+  state.orders = data || [];
+  state.ordersById = Object.fromEntries(state.orders.map(o => [o.id, o]));
+  renderOrdersTable(state.orders);
+}
+function renderOrdersTable(rows) {
+  const tbody = document.getElementById('ordersTableBody');
+  if (!rows.length) { tbody.innerHTML = emptyRow(6, 'No orders match this view.'); return; }
+  tbody.innerHTML = rows.map(o => {
+    const meta = ORDER_STATUS_META[o.status] || ORDER_STATUS_META.pending;
+    const idx = ORDER_PIPELINE.indexOf(o.status);
+    const nextStatus = idx > -1 && idx < ORDER_PIPELINE.length - 1 ? ORDER_PIPELINE[idx + 1] : null;
+    return `<tr>
+      <td><strong>#${escapeHtml(o.order_number)}</strong></td>
+      <td>${escapeHtml(o.customer_name)}<br><span class="cell-sub">${escapeHtml(o.customer_email || '')}</span></td>
+      <td><strong>${formatCurrency(o.total_amount)}</strong></td>
+      <td>
+        <span class="badge ${meta.badge}">${meta.label}</span>
+        <div class="row-actions">
+          ${nextStatus ? `<button class="btn-link" onclick="advanceOrder('${o.id}','${nextStatus}')">Mark ${ORDER_STATUS_META[nextStatus].label}</button>` : ''}
+          ${o.status !== 'cancelled' && o.status !== 'completed' ? `<button class="btn-link btn-link-danger" onclick="cancelOrder('${o.id}')">Cancel</button>` : ''}
+        </div>
+      </td>
+      <td class="cell-sub">${formatDate(o.created_at)}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="viewOrderItems('${o.id}')">View Items</button></td>
+    </tr>`;
+  }).join('');
+}
+async function advanceOrder(id, status) {
+  const { error } = await api.orders.updateStatus(id, status);
+  if (error) { showToast(error.message, 'danger'); return; }
+  showToast(`Order marked ${ORDER_STATUS_META[status].label.toLowerCase()}.`, 'success');
+  loadOrders();
+}
+function cancelOrder(id) {
+  confirmAction('Cancel this order? Remember to notify the customer separately.', async () => {
+    const { error } = await api.orders.updateStatus(id, 'cancelled');
+    if (error) { showToast(error.message, 'danger'); return; }
+    showToast('Order cancelled.', 'success');
+    loadOrders();
+  }, 'Cancel Order');
+}
+async function viewOrderItems(orderId) {
+  const order = state.ordersById[orderId];
+  openModal(`Order #${order.order_number}`, `<p class="modal-loading">Loading items\u2026</p>`);
+  const { data, error } = await api.orders.items(orderId);
+  if (error) { document.getElementById('modalBody').innerHTML = `<p class="text-danger">${escapeHtml(error.message)}</p>`; return; }
+  const items = data || [];
+  const rows = items.length
+    ? items.map(it => `<tr><td>${escapeHtml(it.product_name)}</td><td>${it.quantity}</td><td>${formatCurrency(it.unit_price)}</td><td>${formatCurrency(it.subtotal)}</td></tr>`).join('')
+    : `<tr><td colspan="4"><div class="empty-state"><p>No line items recorded for this order.</p></div></td></tr>`;
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-order-meta">
+      <p><strong>${escapeHtml(order.customer_name)}</strong> \u00B7 ${escapeHtml(order.customer_email || '')}${order.customer_phone ? (' \u00B7 ' + escapeHtml(order.customer_phone)) : ''}</p>
+      ${order.shipping_address ? `<p class="cell-sub">${escapeHtml(order.shipping_address)}</p>` : ''}
+    </div>
+    <table class="data-table">
+      <thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Subtotal</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr><td colspan="3">Order Total</td><td><strong>${formatCurrency(order.total_amount)}</strong></td></tr></tfoot>
+    </table>`;
+}
+document.getElementById('orderSearch').addEventListener('input', debounce((e) => {
+  state.ordersFilter.search = e.target.value.trim();
+  loadOrders();
+}, 350));
+document.querySelectorAll('#orderStatusPills .pill').forEach(p => p.addEventListener('click', () => {
+  document.querySelectorAll('#orderStatusPills .pill').forEach(x => x.classList.remove('active'));
+  p.classList.add('active');
+  state.ordersFilter.status = p.dataset.status;
+  loadOrders();
+}));
+
+/* =====================================================================
+   VISIT BOOKINGS
+   ===================================================================== */
+async function loadBookings() {
+  const tbody = document.getElementById('bookingsTableBody');
+  tbody.innerHTML = skeletonRows(6, 3);
+  const { data, error } = await api.bookings.list(state.bookingsFilter);
+  if (error) { showToast(error.message, 'danger'); return; }
+  state.bookings = data || [];
+  state.bookingsById = Object.fromEntries(state.bookings.map(b => [b.id, b]));
+  renderBookingsTable(state.bookings);
+}
+function renderBookingsTable(rows) {
+  const tbody = document.getElementById('bookingsTableBody');
+  if (!rows.length) { tbody.innerHTML = emptyRow(6, 'No visit bookings match this view.'); return; }
+  tbody.innerHTML = rows.map(b => {
+    const meta = BOOKING_STATUS_META[b.status] || BOOKING_STATUS_META.pending;
+    return `<tr>
+      <td><strong>${escapeHtml(b.visitor_name)}</strong><br><span class="cell-sub">${escapeHtml(b.visitor_email || b.visitor_phone || '')}</span></td>
+      <td>${formatDate(b.visit_date)}${b.time_slot ? '<br><span class="cell-sub">' + escapeHtml(b.time_slot) + '</span>' : ''}</td>
+      <td>${b.pax}</td>
+      <td><span class="badge badge-outline">${escapeHtml(BOOKING_TYPE_LABELS[b.visit_type] || b.visit_type)}</span></td>
+      <td><span class="badge ${meta.badge}">${meta.label}</span></td>
+      <td>
+        <div class="row-actions">
+          ${b.status === 'pending' ? `<button class="btn-link" onclick="approveBooking('${b.id}')">Approve</button><button class="btn-link btn-link-danger" onclick="declineBooking('${b.id}')">Decline</button>` : ''}
+          ${b.status === 'approved' ? `<button class="btn-link" onclick="completeBooking('${b.id}')">Mark Completed</button>` : ''}
+          <button class="btn-link" onclick="openBookingNotes('${b.id}')">Notes</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+async function approveBooking(id) {
+  const { error } = await api.bookings.updateStatus(id, 'approved');
+  if (error) { showToast(error.message, 'danger'); return; }
+  showToast('Booking approved.', 'success');
+  loadBookings();
+}
+function declineBooking(id) {
+  confirmAction('Decline this visit booking?', async () => {
+    const { error } = await api.bookings.updateStatus(id, 'declined');
+    if (error) { showToast(error.message, 'danger'); return; }
+    showToast('Booking declined.', 'success');
+    loadBookings();
+  }, 'Decline');
+}
+async function completeBooking(id) {
+  const { error } = await api.bookings.updateStatus(id, 'completed');
+  if (error) { showToast(error.message, 'danger'); return; }
+  showToast('Booking marked completed.', 'success');
+  loadBookings();
+}
+function openBookingNotes(id) {
+  const b = state.bookingsById[id];
+  openModal(`Notes \u2014 ${b.visitor_name}`, `
+    ${b.notes ? `<p><strong>Visitor note:</strong> ${escapeHtml(b.notes)}</p>` : '<p class="cell-sub">No visitor note.</p>'}
+    <div class="field" style="margin-top:1rem"><label for="bookingAdminNotes">Internal Notes</label><textarea id="bookingAdminNotes">${escapeHtml(b.admin_notes || '')}</textarea></div>
+    <div class="modal-actions"><button class="btn btn-primary" id="saveBookingNotesBtn">Save Notes</button></div>
+  `);
+  document.getElementById('saveBookingNotesBtn').addEventListener('click', async (e) => {
+    setButtonLoading(e.target, true, 'Saving\u2026');
+    const { error } = await api.bookings.updateNotes(id, document.getElementById('bookingAdminNotes').value);
+    setButtonLoading(e.target, false);
+    if (error) { showToast(error.message, 'danger'); return; }
+    showToast('Notes saved.', 'success');
+    closeModal();
+    loadBookings();
+  });
+}
+document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type=submit]');
+  setButtonLoading(btn, true, 'Saving\u2026');
+  const payload = {
+    visitor_name: document.getElementById('bkName').value,
+    visitor_email: document.getElementById('bkEmail').value || null,
+    visitor_phone: document.getElementById('bkPhone').value || null,
+    visit_date: document.getElementById('bkDate').value,
+    time_slot: document.getElementById('bkTime').value || null,
+    pax: parseInt(document.getElementById('bkPax').value, 10),
+    visit_type: document.getElementById('bkType').value,
+    notes: document.getElementById('bkNotes').value || null,
+  };
+  const { error } = await api.bookings.create(payload);
+  setButtonLoading(btn, false);
+  if (error) { showToast(error.message, 'danger'); return; }
+  e.target.reset();
+  showToast('Visit booking added.', 'success');
+  loadBookings();
+});
+document.querySelectorAll('#bookingStatusPills .pill').forEach(p => p.addEventListener('click', () => {
+  document.querySelectorAll('#bookingStatusPills .pill').forEach(x => x.classList.remove('active'));
+  p.classList.add('active');
+  state.bookingsFilter.status = p.dataset.status;
+  loadBookings();
+}));
+
+/* =====================================================================
+   SETTINGS
+   ===================================================================== */
+async function loadSettings() {
+  const { data, error } = await api.settings.list();
+  if (error) { showToast(error.message, 'danger'); return; }
+  const map = Object.fromEntries((data || []).map(r => [r.key, r.value]));
+  document.getElementById('setStoreOpen').checked = map.store_open === 'true';
+  document.getElementById('setContactEmail').value = map.contact_email || '';
+  document.getElementById('setContactPhone').value = map.contact_phone || '';
+  document.getElementById('setContactAddress').value = map.contact_address || '';
+  document.getElementById('setShippingRate').value = map.shipping_flat_rate || '';
+}
+document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type=submit]');
+  setButtonLoading(btn, true, 'Saving\u2026');
+  const rows = [
+    { key: 'store_open', value: document.getElementById('setStoreOpen').checked ? 'true' : 'false' },
+    { key: 'contact_email', value: document.getElementById('setContactEmail').value },
+    { key: 'contact_phone', value: document.getElementById('setContactPhone').value },
+    { key: 'contact_address', value: document.getElementById('setContactAddress').value },
+    { key: 'shipping_flat_rate', value: document.getElementById('setShippingRate').value },
+  ];
+  const { error } = await api.settings.save(rows);
+  setButtonLoading(btn, false);
+  if (error) { showToast(error.message, 'danger'); return; }
+  showToast('Settings saved.', 'success');
+});
+
+/* =====================================================================
+   INIT
+   ===================================================================== */
+initAuth();
+</script>
+</body>
+</html>
