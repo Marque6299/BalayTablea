@@ -1,88 +1,66 @@
-# Balay Tablea — Website (v3, Supabase-backed)
+# Balay Tablea — Website (v2, multi-page)
 
-A responsive marketing, tourism and e-commerce website for Sunburst's Balay
-Tablea (Cabatuan, Iloilo), built with plain HTML, CSS and JavaScript — no
-build step, no framework required. Public pages are now backed directly by
-Supabase: products, storefronts, announcements, wholesale/sourcing
-inquiries, guest orders and visit bookings all read from and write to the
-same project that already powers `admin.html`.
+A responsive marketing, tourism and lead-generation website for Sunburst's
+Balay Tablea (Cabatuan, Iloilo), built with plain HTML, CSS and JavaScript —
+no build step, no framework required.
 
-Visitors never create an account. Every form (shop checkout, visit booking,
-contact/wholesale/sourcing inquiry) only asks for **name, email and contact
-number** — nothing else is required to submit.
+This is a full redesign of the original single-page site: real, separate
+pages instead of scroll-anchors, image-backed page headers, expanded content
+researched from public sources, and stronger credibility signals for
+wholesale/hospitality and press visitors.
 
 ## Structure
 
 ```
 balay-tablea-website/
-├── index.html            Home — hero, story teaser, explore cards, storefront
-│                          teaser (live from Supabase), wholesale CTA
-├── about.html             Our Story — founder story, timeline, community section
-├── process.html           Our Process — pod-to-cup process + DOST partnership
-├── shop.html               Shop — live product grid + guest cart + checkout,
-│                          writes to `orders` / `order_items`
-├── recognition.html        Recognition — dated press list, award badges,
-│                          culinary collaborations
-├── visit.html               Visit Us — guest booking form (`visit_bookings`),
-│                          live storefront/partner-kitchen list, FAQ, map
-├── contact.html             Contact & Wholesale — inquiry form (`inquiries`:
-│                          general / wholesale / sourcing / press)
-├── admin.html                Internal admin dashboard (auth-gated) — products,
-│                          orders, inventory, visit bookings, site settings
+├── index.html          Home — hero, story teaser, explore cards, recognition
+│                        teaser, visit teaser, wholesale CTA
+├── about.html           Our Story — founder story, full timeline, community
+│                        / farmer-partnership section
+├── process.html         Our Process — 6-step pod-to-cup process + DOST
+│                        technology partnership
+├── shop.html             Shop — 5 products, why pricing isn't fixed,
+│                        wholesale teaser
+├── recognition.html      Recognition — dated press list with source links,
+│                        award badges, culinary collaborations
+├── visit.html            Visit Us — hours/address, workshop + farm visit,
+│                        FAQ accordion, embedded map
+├── contact.html          Contact & Wholesale — inquiry form, wholesale
+│                        4-step process
 ├── css/
-│   └── style.css             Brand design system (Amber/Obsidian/Slate tokens)
-│                          plus all page/component styles
+│   └── style.css         All styling — original design system plus new
+│                          components (page heroes, cards, quotes, press
+│                          list, FAQ, badges)
 ├── js/
-│   ├── supabase-client.js    Shared anon Supabase client + data helpers
-│   │                         (announcements, products, storefronts, guest
-│   │                         inserts for inquiries/orders/visit bookings)
-│   ├── main.js                Mobile nav toggle, site-wide announcement bar,
-│   │                         generic inquiry-form wiring
-│   ├── shop.js                 Shop page: product grid, cart, checkout
-│   └── visit.js                 Visit page: booking form, storefront list
-└── README.md                This file
+│   └── main.js            Mobile nav toggle + contact form submit handling
+└── README.md              This file
 ```
 
 Every page shares the same header/nav/footer and the same visual system
-(Fraunces + Archivo type) so navigating between pages feels seamless.
+(Fraunces + Archivo type, moss/clay/gold palette) so navigating between real
+pages feels seamless rather than like separate mini-sites.
 
-## Brand design system (v2026)
+## What changed from the original single-page build
 
-The visual identity now runs on the same token set as `admin.html`, so the
-public site and the admin dashboard feel like one product:
-
-- **Accent:** Tablea Warm Amber `#D97706` (CTAs, links, active states)
-- **Surfaces:** Cacao Obsidian `#0F172A` (page background), Surface Slate
-  `#1E293B` (cards), Elevated Surface `#334155` (headers, dropdowns)
-- **Text:** Crisp Slate `#F8FAFC` / Muted Slate `#94A3B8` / Faded `#64748B`
-- **Semantic:** Emerald success `#10B981`, Amber warning `#F59E0B`, Crimson
-  danger `#EF4444`
-
-All tokens live at the top of `css/style.css` as CSS custom properties
-(`--accent`, `--bg-base`, `--bg-surface`, etc.), with the legacy component
-variable names (`--ink`, `--paper`, `--clay`, `--gold`...) remapped onto
-them so every existing component picked up the new palette automatically.
-A `[data-theme="light"]` override is still available for a lighter mode.
-
-## Supabase integration
-
-Project: `mmbdewpfmybfkczczdhn` (already the project used by `admin.html`).
-Public pages use the anon key only and rely entirely on the RLS policies
-already defined on each table — no service-role key is ever exposed
-client-side.
-
-| Table | Public site usage | RLS for anon |
-|---|---|---|
-| `products` | Shop page reads active products live | SELECT where `status = 'active'` |
-| `announcements` | Site-wide banner on every page | SELECT where `is_active` and in date range |
-| `storefronts` | Visit page + homepage teaser | SELECT where `is_active` |
-| `inquiries` | Contact form (general/wholesale/sourcing/press) | INSERT only |
-| `orders` / `order_items` | Shop checkout | INSERT only |
-| `visit_bookings` | Visit page booking form | INSERT only |
-
-Admin-side management of `announcements`, `storefronts` and `inquiries`
-(currently only readable/writable by the public flows above) is a natural
-next step for `admin.html` — see "Recommended next steps."
+- **Real navigation.** The top nav and footer now link to seven distinct
+  HTML pages instead of scrolling to anchors on one long page.
+- **Image-backed page headers.** Every interior page opens with a full-width
+  photo banner (dark gradient overlay + heading) instead of a plain text
+  block, so the site no longer feels empty on load.
+- **New content**, researched from DOST Region VI, Daily Guardian, Iloilo
+  Today, and a June 2025 Simpol.ph feature on the brand:
+  - A fuller founder story and an expanded timeline (2012 → today)
+  - A "Community First" section on the farmer partnership (20+ families,
+    training, fair-pay-even-for-imperfect-batches practice)
+  - A dedicated Recognition page with **dated, linked, sourced** press
+    mentions instead of unlabelled tags
+  - Named culinary collaborations (Richmonde Hotel Iloilo's Tablea
+    Cheesecake with Tultul and Ilonggo Tiramisu, Chef Ariel Castañeda Jr.)
+  - A Visit page FAQ (booking, group tours, kids, combining with a farm
+    visit) and an embedded map
+  - A Contact/Wholesale page with a plain-language 4-step wholesale process
+- **Schema.org `Bakery` structured data** on every page for search-engine
+  and map-listing credibility.
 
 ## Running it locally
 
@@ -92,50 +70,99 @@ No build tools needed. Either:
   ```
   npx serve .
   ```
-Supabase calls work the same locally as in production — the anon key is
-public by design and scoped entirely by RLS.
 
 ## Deploying
 
-This build is static — any host works. The contact/shop/visit forms no
-longer depend on Netlify Forms; they post straight to Supabase from the
-browser, so nothing host-specific is required. Push to `main` as usual and
-redeploy on Netlify (or any static host) the same way you already do.
+**Netlify (recommended, zero config):**
+1. Go to [app.netlify.com/drop](https://app.netlify.com/drop)
+2. Drag the whole folder in
+3. Netlify auto-detects the contact form (`data-netlify="true"` is already
+   set on `contact.html`) — submissions appear under your site's **Forms**
+   tab with no extra setup
 
-## What changed in this pass (v3)
+**Any other static host** (GitHub Pages, Vercel, Cloudflare Pages, plain
+S3/CDN): works as-is. If you use a host other than Netlify, the contact
+form's `fetch('/')` submit will need to point at whatever form backend you
+use instead (e.g. Formspree, a simple serverless function).
 
-- Replaced the static, price-less Shop page with a live product grid,
-  quantity steppers, a cart, and guest checkout that writes real orders.
-- Replaced the Netlify-Forms contact form with a direct `inquiries` insert,
-  added a phone field, and added a "sourcing" option for farmers/suppliers
-  who want to sell cacao to Balay Tablea (distinct from wholesale buyers).
-- Added a real visit-booking form (date, group size, visit type, notes)
-  writing to `visit_bookings`, replacing the old "message us" link.
-- Added a site-wide announcement bar sourced from `announcements`.
-- Added a live Storefronts section (main shop + partner kitchens) sourced
-  from `storefronts`, on both the Visit page and the homepage.
-- Full visual overhaul onto the Amber/Obsidian/Slate brand system shared
-  with `admin.html`.
+## ⚠️ About the images — read before publishing live
 
-## ⚠️ About the images
+To make every page feel real immediately, this build links to a small set
+of real, already-public photos of Balay Tablea, Catherine Taleon, and
+Cabatuan cacao, found via research:
 
-Several photos are still hot-linked from Simpol.ph and DOST Region VI as
-development placeholders (see the original v2 notes in git history). Before
-a hard commercial launch, swap these for owned photography, particularly
-on the Shop page where real product photos matter for conversion.
+| Used on | Image | Source |
+|---|---|---|
+| Home hero | Wide cover photo of wrapped tablea rolls | Simpol.ph (2025) |
+| About hero | Cacao pods, Iloilo highlands | Simpol.ph |
+| About / Home / Contact | Catherine Taleon with DOST Secretary dela Peña | DOST Region VI (government, 2018) |
+| Process hero / Visit | Visitor grinding cacao on the metate | Simpol.ph |
+| Shop hero / Process | Mangga't ibos with hot tsokolate | Simpol.ph |
+| Recognition hero | Richmonde Hotel's Ilonggo Tiramisu | Simpol.ph |
+| Visit hero / Home | Cabatuan LGU farm visit | Simpol.ph |
 
-## Recommended next steps
+These are hot-linked (loaded directly from the original sites) as
+**development placeholders**, not files copied into this project. The DOST
+photos are government-published and lower-risk to reference; the Simpol.ph
+photos are editorial photography owned by that outlet. **Before this site
+goes live commercially, swap these for:**
+- Balay Tablea's own product/shop/storefront photography (this is the
+  single highest-impact thing left to do — see "Next steps" below), or
+- Images you've licensed or gotten explicit permission to use.
 
-1. **Admin management for `announcements`, `storefronts`, and `inquiries`.**
-   These tables exist and are already used by the public site, but
-   `admin.html` doesn't yet have UI to create/edit rows in them — someone
-   has to use the Supabase table editor directly today.
-2. **Owned product photography** for the Shop page.
-3. **Stock decrement on order placement.** Orders currently insert into
-   `orders`/`order_items` but don't touch `products.stock_quantity` (anon
-   users have no UPDATE grant on `products` by design) — reconcile stock
-   from the admin Orders view when fulfilling.
-4. **Email/SMS notification on new order, booking or inquiry** (e.g. a
-   Supabase Edge Function + webhook) so the team doesn't have to poll the
-   admin dashboard.
-5. **Google Business Profile** linked from the Visit page.
+If any hot-linked image ever goes offline or is removed by its host, that
+`<img>` will simply break — another reason to replace them with owned
+assets before launch.
+
+## Content sources
+
+Founder story, timeline, and recognition copy was written from public
+reporting and paraphrased in original wording: Simpol.ph ("Filipino Tablea
+Chocolate," Natalie U. Lim, June 2025), DOST Region VI press posts (2018),
+Daily Guardian (2019), and Iloilo Today (2018–19). Direct links are cited
+on the Recognition page. No pricing is listed on the site since current
+prices weren't publicly confirmed — the shop page explains why (hand-made,
+seasonal cacao cost) and routes visitors to Messenger/the contact form,
+matching how the business already takes orders today.
+
+## Recommended next steps (not built here)
+
+1. **Owned photography** — storefront, product close-ups, Catherine at
+   work, the actual shop interior. This is the #1 credibility gap.
+2. **A confirmed price list or price ranges**, even indicative ones.
+3. **A simple blog/news page** for ongoing press mentions and events (the
+   Recognition page is ready to extend into one).
+4. **Google Business Profile** linked from the Visit page, so reviews and
+   map data show up alongside the embedded map.
+5. **Analytics** (e.g. a privacy-friendly tool) so you can see which pages
+   — Shop vs. Recognition vs. Visit — actually drive inquiries.
+
+## Admin Dashboard (multi-page)
+
+Staff-only pages, protected by Supabase Auth (no login = redirected to `admin-login.html`).
+
+```
+admin-login.html      Staff sign-in
+admin.html            Dashboard — stat cards + latest 5 orders / upcoming visits / low-stock items
+admin-products.html   Catalog CRUD, categories, draft/active/archived, bulk price update
+admin-inventory.html  Stock movements, low-stock alerts, log linked to orders
+admin-orders.html     Create orders (line items + shipping fee), status pipeline, order details
+admin-bookings.html   Visit bookings: add, approve/decline/complete, internal notes
+admin-settings.html   Store open/closed, contact info, default flat-rate shipping
+css/admin.css         Shared admin theme (Deep Cocoa / Terracotta palette)
+js/admin-common.js    Supabase client, auth guard, API layer, shared helpers
+js/admin-*.js         One script per page
+sql/                  Run in order in the Supabase SQL Editor (001, then 002)
+```
+
+Every table view has a filter for each column (client-side, instant).
+
+**Order logic:** marking an order *Shipped* calls the `mark_order_shipped()` database
+function, which in one transaction sets the status, deducts each line item's quantity
+from stock (once only), and writes an inventory log entry per product linked to the
+order. Order total = items subtotal + shipping fee (default comes from Settings).
+
+**Setup checklist**
+1. Run `sql/001_initial_admin_schema.sql`, then `sql/002_orders_shipping_and_inventory.sql`.
+2. Supabase → Authentication → Users → add your staff login.
+3. Deploy; sign in at `/admin-login.html`.

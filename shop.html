@@ -41,11 +41,10 @@
 </script>
 </head>
 <body>
-<div id="announceBar"></div>
 
 <header>
   <div class="wrap nav">
-    <a href="index.html" class="brand brand-logo" style="text-decoration:none"><img src="img/logo.png" alt="Balay Tablea" width="150" height="44"><span class="brand-wordmark">BALAY TABLEA</span></a>
+    <a href="index.html" class="brand" style="text-decoration:none">Balay <span>Tablea</span></a>
     <nav class="links" id="navLinks">
       <a href="index.html">Home</a>
       <a href="about.html">Our Story</a>
@@ -67,34 +66,39 @@
     <div class="crumb"><a href="index.html">Home</a> / Shop</div>
     <div class="eyebrow">Take It Home</div>
     <h1>What we make.</h1>
-    <p class="lede">Everything below is hand-made in small batches in Cabatuan — order online, pick a pack, and check out as a guest with just your name, email and number.</p>
+    <p class="lede">Everything below is hand-made in small batches — which is also why pricing moves with the cacao season rather than sitting fixed on a menu.</p>
   </div>
 </section>
 
 <section id="shop-list">
   <div class="wrap">
-    <div class="eyebrow">Order Online</div>
-    <h2 style="margin-bottom:1rem">Pick your box, we'll confirm the rest.</h2>
-    <p style="max-width:64ch">Add what you'd like to your cart, then check out with just your name, email and contact number — no account needed. We'll follow up to confirm payment and delivery or pickup.</p>
-    <div class="shop-layout" style="margin-top:2rem">
-      <div class="shop-grid" id="shopGrid"></div>
-      <aside class="cart-panel">
-        <h3>Your Cart</h3>
-        <div class="cart-empty" id="cartEmpty">Your cart is empty.</div>
-        <ul class="cart-lines" id="cartLines"></ul>
-        <div class="cart-total" id="cartTotal"><span>Total</span><b>&#8369;0.00</b></div>
-        <button type="button" class="btn btn-primary" id="checkoutBtn" style="width:100%; justify-content:center" disabled>Checkout</button>
-        <p style="text-align:center; font-size:.8rem; margin-top:.75rem;"><a href="order-status.html">Already ordered? Track your order →</a></p>
-        <form id="checkoutForm" class="checkout-form">
-          <p class="checkout-note">Guest checkout — no login required.</p>
-          <div class="field"><label for="co-name">Name</label><input id="co-name" name="name" required></div>
-          <div class="field"><label for="co-email">Email</label><input id="co-email" type="email" name="email" required></div>
-          <div class="field"><label for="co-phone">Contact number</label><input id="co-phone" type="tel" name="phone" placeholder="+63 9xx xxx xxxx" required></div>
-          <div class="field"><label for="co-address">Delivery address <span style="font-weight:400; opacity:.7">(leave blank for pickup)</span></label><textarea id="co-address" name="address" placeholder="For pickup at the Cabatuan shop, leave this blank"></textarea></div>
-          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center">Place Order</button>
-        </form>
-        <p id="orderMsg"></p>
-      </aside>
+    <div class="eyebrow">Why No Fixed Price List</div>
+    <p style="max-width:64ch">Every batch is hand-ground to order, and cacao cost shifts with the season and harvest yield in Cabatuan — so instead of a stale price sheet, we quote fresh for whatever you're ordering. Message us on Facebook or use the form below and we'll reply with current pricing, usually within a day.</p>
+    
+    <div class="prod-row">
+      <svg class="prod-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="14" width="36" height="20" rx="2" fill="none" stroke="#3F4A2E" stroke-width="2.5"/><path d="M6 14 L24 24 L42 14" fill="none" stroke="#3F4A2E" stroke-width="2.5"/></svg>
+      <div><h3>Tablea Rolls</h3><p>Stone-ground cacao, rolled and wrapped in dried banana leaf — our signature, sold loose or by the pack.</p></div>
+      <div class="prod-note"><a href="contact.html" style="color:inherit; text-decoration:none">Ask current pricing →</a></div>
+    </div>
+    <div class="prod-row">
+      <svg class="prod-icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M14 22 Q14 34 24 34 Q34 34 34 22" fill="none" stroke="#3F4A2E" stroke-width="2.5"/><path d="M14 22 L34 22" stroke="#3F4A2E" stroke-width="2.5"/><path d="M20 10 Q17 15 20 18 M28 10 Q25 15 28 18" fill="none" stroke="#C98A2B" stroke-width="2.5"/></svg>
+      <div><h3>Hot Tsokolate Mix</h3><p>Our brew, thick and unsweetened at the base — the shop's most-loved order, made for a wooden batirol.</p></div>
+      <div class="prod-note"><a href="contact.html" style="color:inherit; text-decoration:none">Ask current pricing →</a></div>
+    </div>
+    <div class="prod-row">
+      <svg class="prod-icon" viewBox="0 0 48 48" aria-hidden="true"><circle cx="16" cy="24" r="6" fill="#8C4A2F"/><circle cx="28" cy="18" r="6" fill="#8C4A2F"/><circle cx="34" cy="30" r="5" fill="#8C4A2F"/></svg>
+      <div><h3>Raw Cacao Nibs</h3><p>For bakers, chefs, and anyone who wants the source ingredient itself — the same beans Richmonde Hotel Iloilo cooks with.</p></div>
+      <div class="prod-note"><a href="contact.html" style="color:inherit; text-decoration:none">Ask current pricing →</a></div>
+    </div>
+    <div class="prod-row">
+      <svg class="prod-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="9" y="12" width="30" height="26" rx="2" fill="none" stroke="#3F4A2E" stroke-width="2.5"/><path d="M9 20 L39 20" stroke="#C98A2B" stroke-width="3"/><path d="M24 12 L24 38" stroke="#C98A2B" stroke-width="3"/></svg>
+      <div><h3>Pasalubong Gift Sets</h3><p>Bundled rolls, mix, and nibs in a single box — built for balikbayans and gifting, our best-selling format at the airport nearby.</p></div>
+      <div class="prod-note"><a href="contact.html" style="color:inherit; text-decoration:none">Ask current pricing →</a></div>
+    </div>
+    <div class="prod-row">
+      <svg class="prod-icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M8 30 Q24 10 40 30 Q24 22 8 30 Z" fill="none" stroke="#3F4A2E" stroke-width="2.5"/></svg>
+      <div><h3>Otap</h3><p>A crisp, flaky pasalubong classic, sold alongside the chocolate for a full Ilonggo pasalubong box.</p></div>
+      <div class="prod-note"><a href="contact.html" style="color:inherit; text-decoration:none">Ask current pricing →</a></div>
     </div>
   </div>
 </section>
@@ -117,7 +121,7 @@
 <footer>
   <div class="wrap footGrid sitemap">
     <div class="footCol" style="max-width:240px">
-      <div class="brand brand-logo"><img src="img/logo.png" alt="Balay Tablea" width="130" height="38"></div>
+      <div class="brand">Balay <span>Tablea</span></div>
       <p style="margin-top:.6rem; font-size:.88rem">Rizal Street, Cabatuan, Iloilo, Philippines — authorized manufacturer &amp; distributor of Tan Tono Tablea, Cabatuan's official OTOP cacao product.</p>
     </div>
     <div class="footCol">
@@ -133,7 +137,6 @@
       <h4>Visit &amp; Order</h4>
       <ul>
         <li><a href="visit.html">Plan a Visit</a></li>
-        <li><a href="order-status.html">Track Order</a></li>
         <li><a href="contact.html">Contact &amp; Wholesale</a></li>
         <li><a href="https://www.facebook.com/products.balaytablea/">Message on Facebook</a></li>
       </ul>
@@ -152,9 +155,6 @@
   </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/supabase-client.js"></script>
 <script src="js/main.js"></script>
-<script src="js/shop.js"></script>
 </body>
 </html>
