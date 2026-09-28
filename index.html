@@ -41,10 +41,11 @@
 </script>
 </head>
 <body>
+<div id="announceBar"></div>
 
 <header>
   <div class="wrap nav">
-    <a href="index.html" class="brand" style="text-decoration:none">Balay <span>Tablea</span></a>
+    <a href="index.html" class="brand brand-logo" style="text-decoration:none"><img src="img/logo.png" alt="Balay Tablea" width="150" height="44"><span class="brand-wordmark">BALAY TABLEA</span></a>
     <nav class="links" id="navLinks">
       <a href="index.html" class="active" aria-current="page">Home</a>
       <a href="about.html">Our Story</a>
@@ -68,7 +69,7 @@
     <p class="lede">Sunburst's Balay Tablea keeps Cabatuan's cacao tradition alive the old way: beans from local farming families, ground by hand on a stone metate, rolled and wrapped in banana leaf, brewed into tsokolate the way it's always been.</p>
     <div class="heroBtns" style="margin-top:1.6rem">
       <a href="shop.html" class="btn btn-primary">See Our Products</a>
-      <a href="visit.html" class="btn btn-ghost" style="border-color:#F3EDDB; color:#F3EDDB">Plan a Visit</a>
+      <a href="visit.html" class="btn btn-ghost" style="border-color:#F8FAFC; color:#F8FAFC">Plan a Visit</a>
     </div>
   </div>
 </section>
@@ -142,7 +143,7 @@
   </div>
 </section>
 
-<section id="recognition-teaser">
+<section id="recognition-teaser" class="bg-photo" style="background-image:url('https://www.simpol.ph/wp-content/uploads/2025/06/tablea-4-600x600.jpg')">
   <div class="wrap">
     <div class="eyebrow">As Seen In</div>
     <h2>Cabatuan's cacao, on wider stages.</h2>
@@ -173,7 +174,17 @@
   </div>
 </section>
 
-<section id="cta-wholesale">
+<section class="section-tinted" id="storefronts-teaser">
+  <div class="wrap">
+    <div class="eyebrow">Find Us</div>
+    <h2>Our storefront &amp; partner kitchens.</h2>
+    <p style="max-width:64ch">The workshop and store in Cabatuan, plus partner kitchens around Iloilo already serving Balay Tablea cacao.</p>
+    <div class="storefront-grid" id="storefrontGridHome"></div>
+    <a href="visit.html" class="btn btn-ghost" style="margin-top:1.6rem">Plan a visit &amp; see hours</a>
+  </div>
+</section>
+
+<section id="cta-wholesale" class="bg-photo" style="background-image:url('https://www.simpol.ph/wp-content/uploads/2025/06/tablea1-600x600.jpg')">
   <div class="wrap" style="text-align:center">
     <div class="eyebrow">For Hotels, Cafés &amp; Pasalubong Shops</div>
     <h2 style="max-width:30ch; margin:0 auto">Already on menus at Richmonde Hotel Iloilo. Yours could be next.</h2>
@@ -185,7 +196,7 @@
 <footer>
   <div class="wrap footGrid sitemap">
     <div class="footCol" style="max-width:240px">
-      <div class="brand">Balay <span>Tablea</span></div>
+      <div class="brand brand-logo"><img src="img/logo.png" alt="Balay Tablea" width="130" height="38"></div>
       <p style="margin-top:.6rem; font-size:.88rem">Rizal Street, Cabatuan, Iloilo, Philippines — authorized manufacturer &amp; distributor of Tan Tono Tablea, Cabatuan's official OTOP cacao product.</p>
     </div>
     <div class="footCol">
@@ -201,6 +212,7 @@
       <h4>Visit &amp; Order</h4>
       <ul>
         <li><a href="visit.html">Plan a Visit</a></li>
+        <li><a href="order-status.html">Track Order</a></li>
         <li><a href="contact.html">Contact &amp; Wholesale</a></li>
         <li><a href="https://www.facebook.com/products.balaytablea/">Message on Facebook</a></li>
       </ul>
@@ -219,6 +231,8 @@
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="js/supabase-client.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

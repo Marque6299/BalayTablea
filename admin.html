@@ -1,95 +1,1880 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="robots" content="noindex, nofollow">
-<title>Dashboard — Balay Tablea Admin</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8D%AB%3C/text%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/admin.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Balay Tablea — Admin Operating System</title>
+
+  <!-- Google Fonts & Font Awesome Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- Supabase JS Client v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+
+  <style>
+    :root {
+      --bg-base: #0f172a;
+      --bg-surface: #1e293b;
+      --bg-surface-elevated: #334155;
+      --border-color: rgba(255, 255, 255, 0.1);
+      --accent: #d97706; /* Tablea Warm Amber */
+      --accent-hover: #b45309;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --danger: #ef4444;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+    }
+
+    /* --- TOAST NOTIFICATIONS --- */
+    #toast-container {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      pointer-events: none;
+    }
+
+    .toast {
+      pointer-events: auto;
+      min-width: 280px;
+      padding: 0.875rem 1.25rem;
+      border-radius: 8px;
+      background: var(--bg-surface-elevated);
+      color: var(--text-main);
+      font-size: 0.875rem;
+      font-weight: 500;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      border-left: 4px solid var(--accent);
+      animation: slideIn 0.25s ease-out forwards;
+    }
+
+    .toast.toast-success { border-left-color: var(--success); }
+    .toast.toast-error { border-left-color: var(--danger); }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* --- AUTH OVERLAY --- */
+    #auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(12px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .auth-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      text-align: center;
+    }
+
+    .auth-brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .auth-brand img {
+      height: 48px;
+      object-fit: contain;
+    }
+
+    .auth-brand-fallback {
+      width: 48px;
+      height: 48px;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+
+    /* --- SIDEBAR & LAYOUT --- */
+    #sidebar {
+      width: 260px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand-header {
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .brand-header img {
+      height: 36px;
+      object-fit: contain;
+    }
+
+    .brand-header h1 {
+      font-size: 1.125rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-list {
+      list-style: none;
+      padding: 1rem 0.75rem;
+      flex: 1;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.875rem;
+      padding: 0.75rem 1rem;
+      color: var(--text-muted);
+      border-radius: 8px;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      cursor: pointer;
+      margin-bottom: 0.25rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-item:hover, .nav-item.active {
+      background: rgba(217, 119, 6, 0.15);
+      color: var(--accent);
+    }
+
+    .sidebar-footer {
+      padding: 1rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    #main-content {
+      margin-left: 260px;
+      flex: 1;
+      padding: 2rem;
+      min-height: 100vh;
+    }
+
+    /* --- TOPBAR & HEADERS --- */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+    }
+
+    /* --- FORM CONTROLS --- */
+    .input-group {
+      margin-bottom: 1.25rem;
+      text-align: left;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.375rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: var(--bg-base);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-main);
+      font-size: 0.9375rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+      border-color: var(--accent);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-secondary { background: var(--bg-surface-elevated); color: var(--text-main); }
+    .btn-secondary:hover { background: #475569; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-sm { padding: 0.375rem 0.625rem; font-size: 0.8125rem; }
+
+    /* --- CARDS & TABLES --- */
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.875rem;
+    }
+
+    th {
+      background: var(--bg-surface-elevated);
+      color: var(--text-muted);
+      padding: 0.875rem 1.25rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+
+    td {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-main);
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    /* --- BADGES --- */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.625rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+
+    .badge-active, .badge-completed, .badge-approved, .badge-shipped { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+    .badge-pending, .badge-processing { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+    .badge-draft, .badge-cancelled, .badge-declined, .badge-archived { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+
+    /* --- MODALS --- */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      padding: 1rem;
+    }
+
+    .modal-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 550px;
+      padding: 2rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* --- DASHBOARD / KPI CARDS --- */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; margin-bottom: 2rem; }
+    .kpi-card { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1.4rem; }
+    .kpi-card .kpi-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); font-weight: 600; margin-bottom: .5rem; display:flex; align-items:center; justify-content:space-between; }
+    .kpi-card .kpi-value { font-size: 1.85rem; font-weight: 700; }
+    .kpi-card .kpi-sub { font-size: .78rem; color: var(--text-muted); margin-top: .25rem; }
+    .kpi-card.warn .kpi-value { color: var(--warning); }
+    .kpi-card.danger .kpi-value { color: var(--danger); }
+    .kpi-card.good .kpi-value { color: var(--success); }
+
+    .dash-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 1.5rem; align-items: start; }
+    .panel-title { font-size: 1rem; font-weight: 700; padding: 1.1rem 1.25rem; border-bottom: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; }
+    .panel-title a { font-size: .8rem; font-weight: 600; color: var(--accent); text-decoration: none; }
+
+    /* presence list */
+    .presence-list { list-style: none; padding: .75rem; display: grid; gap: .35rem; }
+    .presence-item { display: flex; align-items: center; gap: .75rem; padding: .6rem .5rem; border-radius: 8px; }
+    .presence-item:hover { background: var(--bg-surface-elevated); }
+    .presence-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: #fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size: .8rem; flex-shrink:0; position:relative; }
+    .presence-dot { position:absolute; bottom:-2px; right:-2px; width:11px; height:11px; border-radius:50%; border:2px solid var(--bg-surface); background: var(--text-disabled); }
+    .presence-dot.online { background: var(--success); }
+    .presence-name { font-size: .875rem; font-weight: 600; }
+    .presence-meta { font-size: .75rem; color: var(--text-muted); }
+    .empty-mini { padding: 1.5rem; text-align:center; color: var(--text-muted); font-size: .875rem; }
+
+    /* signed-in-as footer */
+    .session-card { display:flex; align-items:center; gap:.65rem; padding:.75rem; margin-bottom:.75rem; background: var(--bg-base); border: 1px solid var(--border-color); border-radius: 10px; }
+    .session-card .presence-avatar { width: 32px; height: 32px; font-size: .75rem; }
+    .session-card .who { min-width:0; }
+    .session-card .who strong { display:block; font-size:.8125rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .session-card .who span { font-size: .7rem; color: var(--text-muted); text-transform: capitalize; }
+
+    /* mobile topbar toggle (hidden on desktop) */
+    #mobileTopbar { display:none; }
+    #sidebarOverlay { display:none; }
+
+    @media (max-width: 980px) {
+      #mobileTopbar {
+        display:flex; align-items:center; justify-content:space-between; gap: 1rem;
+        position:sticky; top:0; z-index:90; background: var(--bg-surface);
+        border-bottom:1px solid var(--border-color); padding: .85rem 1rem; width:100%;
+      }
+      #mobileTopbar .brand-header { padding: 0; border: 0; }
+      #mobileTopbar .brand-header img { height: 28px; }
+      #mobileTopbar .brand-header h1 { font-size: 1rem; }
+      #sidebarToggle { background: var(--bg-surface-elevated); border: 0; color: var(--text-main); width: 38px; height: 38px; border-radius: 8px; font-size: 1.1rem; cursor:pointer; }
+
+      body { display:block; }
+      #sidebar { transform: translateX(-100%); transition: transform .25s ease; z-index: 200; box-shadow: var(--shadow-modal); }
+      #sidebar.open { transform: translateX(0); }
+      #sidebarOverlay.show { display:block; position:fixed; inset:0; background: rgba(0,0,0,.55); z-index: 150; }
+      #main-content { margin-left: 0; padding: 1.25rem 1rem 3rem; }
+
+      .kpi-grid { grid-template-columns: 1fr 1fr; gap: .85rem; }
+      .kpi-card { padding: 1rem; }
+      .kpi-card .kpi-value { font-size: 1.4rem; }
+      .dash-grid { grid-template-columns: 1fr; }
+      .top-bar { flex-direction: column; align-items: stretch; }
+      .top-bar > div { width: 100%; }
+      .top-bar input.form-control { width: 100% !important; }
+      .modal { padding: 1.4rem; }
+    }
+    @media (max-width: 480px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+    }
+
+    /* role / status badges reused for staff + messages */
+    .badge-owner, .badge-admin { background: rgba(217, 119, 6, 0.18); color: var(--accent); }
+    .badge-manager { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+    .badge-staff, .badge-invited, .badge-new { background: rgba(148, 163, 184, 0.18); color: var(--text-muted); }
+    .badge-suspended, .badge-declined2 { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+    .badge-in_progress { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+    .badge-resolved { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+  </style>
 </head>
 <body>
 
-<div class="toast-container" id="toastContainer"></div>
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container"></div>
 
-<div class="app-shell">
-  <header class="topbar">
-    <button class="icon-btn sidebar-toggle" id="sidebarToggle" aria-label="Toggle menu">&#9776;</button>
-    <div class="brand-logo brand-logo-sm">
-      <img src="img/logo.png" alt="Balay Tablea" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-      <div class="logo-fallback" style="display:none"><span class="logo-mark">BT</span></div>
+  <!-- AUTHENTICATION OVERLAY -->
+  <div id="auth-overlay">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <img src="img/logo.png" id="auth-logo" alt="Balay Tablea" onerror="handleImageError(this)" />
+        <h2 id="auth-title-brand" style="display:none;">Balay Tablea</h2>
+      </div>
+      <h2>Admin Portal</h2>
+      <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem;">
+        Sign in with your management credentials.
+      </p>
+      
+      <form id="login-form">
+        <div class="input-group">
+          <label for="login-email">Email Address</label>
+          <input type="email" id="login-email" class="form-control" placeholder="admin@balaytablea.com" required />
+        </div>
+        <div class="input-group">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" class="form-control" placeholder="••••••••" required />
+        </div>
+        <button type="submit" id="btn-login" class="btn btn-primary" style="width: 100%;">
+          <i class="fa-solid fa-right-to-bracket"></i> Sign In
+        </button>
+      </form>
     </div>
-    <h1 class="topbar-title">Dashboard</h1>
-    <div class="topbar-right">
-      <span class="topbar-user" id="userEmail"></span>
-      <button class="btn btn-ghost btn-sm" id="logoutBtn">Log Out</button>
-    </div>
-  </header>
+  </div>
 
-  <div class="shell-body">
-    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-    <aside class="sidebar" id="sidebar">
-      <div class="brand-logo brand-logo-md">
-        <img src="img/logo.png" alt="Balay Tablea" style="max-height:48px" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-        <div class="logo-fallback" style="display:none">
-          <span class="logo-mark">BT</span>
-          <span class="logo-word">Balay <em>Tablea</em></span>
+  <!-- MOBILE TOPBAR (visible <980px) -->
+  <div id="mobileTopbar">
+    <div class="brand-header">
+      <img src="img/logo.png" alt="Logo" onerror="handleImageError(this)" />
+      <h1>Balay Tablea</h1>
+    </div>
+    <button id="sidebarToggle" aria-label="Open menu" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+  </div>
+  <div id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
+
+  <!-- NAVIGATION SIDEBAR -->
+  <aside id="sidebar">
+    <div class="brand-header">
+      <img src="img/logo.png" alt="Logo" onerror="handleImageError(this)" />
+      <span id="brand-text-fallback" style="display:none; font-weight:700; color:var(--accent);">BT</span>
+      <h1>Balay Tablea</h1>
+    </div>
+    <ul class="nav-list">
+      <li class="nav-item active" onclick="switchTab('dashboard', this)">
+        <i class="fa-solid fa-gauge-high"></i> Dashboard
+      </li>
+      <li class="nav-item" onclick="switchTab('products', this)">
+        <i class="fa-solid fa-box"></i> Products
+      </li>
+      <li class="nav-item" onclick="switchTab('inventory', this)">
+        <i class="fa-solid fa-warehouse"></i> Inventory Logs
+      </li>
+      <li class="nav-item" onclick="switchTab('orders', this)">
+        <i class="fa-solid fa-receipt"></i> Orders
+      </li>
+      <li class="nav-item" onclick="switchTab('bookings', this)">
+        <i class="fa-solid fa-calendar-check"></i> Visit Bookings
+      </li>
+      <li class="nav-item" onclick="switchTab('messages', this)">
+        <i class="fa-solid fa-envelope"></i> Messages
+        <span id="messages-nav-badge" class="badge badge-new" style="margin-left:auto; display:none;">0</span>
+      </li>
+      <li class="nav-item" onclick="switchTab('staff', this)">
+        <i class="fa-solid fa-users"></i> Staff
+      </li>
+      <li class="nav-item" onclick="switchTab('settings', this)">
+        <i class="fa-solid fa-sliders"></i> Site Settings
+      </li>
+    </ul>
+    <div class="sidebar-footer">
+      <div class="session-card" id="session-card" style="display:none;">
+        <div class="presence-avatar" id="session-avatar">?<span class="presence-dot online"></span></div>
+        <div class="who">
+          <strong id="session-email">&nbsp;</strong>
+          <span id="session-role">&nbsp;</span>
         </div>
       </div>
-      <nav class="nav-menu">
-        <a href="admin.html" class="nav-btn active" aria-current="page">Dashboard</a>
-        <a href="admin-products.html" class="nav-btn">Products</a>
-        <a href="admin-inventory.html" class="nav-btn">Inventory</a>
-        <a href="admin-orders.html" class="nav-btn">Orders</a>
-        <a href="admin-bookings.html" class="nav-btn">Visit Bookings</a>
-        <a href="admin-settings.html" class="nav-btn">Settings</a>
-      </nav>
-      <div class="sidebar-footer">
-        <p class="sidebar-user" id="sidebarUserEmail"></p>
-        <button class="btn btn-ghost btn-block btn-sm" id="logoutBtnSidebar">Log Out</button>
-      </div>
-    </aside>
-
-    <main class="main-content">
-      <section class="panel" id="panel-dashboard">
-        <div class="panel-header">
-          <div><h2>Good to see you.</h2><p>Here's how the shop is doing right now.</p></div>
-        </div>
-        <div class="stat-grid" id="statGrid"></div>
-        <div class="dash-columns">
-          <div class="panel-card glass">
-            <div class="panel-card-head"><h3>Recent Orders</h3><a class="view-all-link" href="admin-orders.html">View all</a></div>
-            <div class="mini-list" id="recentOrdersList"></div>
-          </div>
-          <div class="panel-card glass">
-            <div class="panel-card-head"><h3>Upcoming Visits</h3><a class="view-all-link" href="admin-bookings.html">View all</a></div>
-            <div class="mini-list" id="upcomingVisitsList"></div>
-          </div>
-          <div class="panel-card glass">
-            <div class="panel-card-head"><h3>Low Stock Alerts</h3><a class="view-all-link" href="admin-inventory.html">View all</a></div>
-            <div class="mini-list" id="dashLowStockList"></div>
-          </div>
-        </div>
-      </section>
-    </main>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modalOverlay" hidden>
-  <div class="modal glass" role="dialog" aria-modal="true">
-    <div class="modal-header">
-      <h3 id="modalTitle"></h3>
-      <button class="icon-btn" id="modalCloseBtn" aria-label="Close">&times;</button>
+      <button class="btn btn-secondary" style="width: 100%;" onclick="handleLogout()">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+      </button>
     </div>
-    <div class="modal-body" id="modalBody"></div>
-  </div>
-</div>
+  </aside>
 
-<script src="js/admin-common.js"></script>
-<script src="js/admin-dashboard.js"></script>
+  <!-- MAIN CONTENT AREA -->
+  <main id="main-content">
+    
+    <!-- 0. DASHBOARD SECTION -->
+    <section id="sec-dashboard" class="tab-content active">
+      <div class="top-bar">
+        <h2 class="page-title">Order Overview Dashboard</h2>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card good">
+          <div class="kpi-label">Revenue (all orders)</div>
+          <div class="kpi-value" id="kpi-revenue">₱0.00</div>
+          <div class="kpi-sub" id="kpi-revenue-sub">&nbsp;</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Orders</div>
+          <div class="kpi-value" id="kpi-orders">0</div>
+          <div class="kpi-sub" id="kpi-orders-sub">&nbsp;</div>
+        </div>
+        <div class="kpi-card warn">
+          <div class="kpi-label">Pending Orders</div>
+          <div class="kpi-value" id="kpi-pending">0</div>
+          <div class="kpi-sub">Need action</div>
+        </div>
+        <div class="kpi-card danger">
+          <div class="kpi-label">Low Stock Items</div>
+          <div class="kpi-value" id="kpi-lowstock">0</div>
+          <div class="kpi-sub">At or below threshold</div>
+        </div>
+      </div>
+      <div class="kpi-grid" style="margin-top:-.5rem">
+        <div class="kpi-card">
+          <div class="kpi-label">New Messages</div>
+          <div class="kpi-value" id="kpi-inquiries">0</div>
+          <div class="kpi-sub">Unread inquiries</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Upcoming Visits</div>
+          <div class="kpi-value" id="kpi-bookings">0</div>
+          <div class="kpi-sub">Pending / approved</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Staff Online</div>
+          <div class="kpi-value" id="kpi-online">0</div>
+          <div class="kpi-sub">Active in the last 5 min</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Products Active</div>
+          <div class="kpi-value" id="kpi-products">0</div>
+          <div class="kpi-sub">Live on the storefront</div>
+        </div>
+      </div>
+
+      <div class="dash-grid">
+        <div class="card">
+          <div class="panel-title">Recent Orders <a onclick="switchTab('orders', document.querySelector(\'[onclick*=orders]\'))" href="javascript:void(0)">View all →</a></div>
+          <div class="table-container">
+            <table>
+              <thead><tr><th>Order #</th><th>Customer</th><th>Total</th><th>Status</th><th>Date</th></tr></thead>
+              <tbody id="dash-orders-tbody"><tr><td colspan="5" style="text-align:center;">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="panel-title">Currently Online</div>
+          <ul class="presence-list" id="dash-presence-list">
+            <li class="empty-mini">Loading…</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="dash-grid" style="margin-top:1.5rem">
+        <div class="card">
+          <div class="panel-title">Recent Messages <a onclick="switchTab('messages', document.querySelector(\'[onclick*=messages]\'))" href="javascript:void(0)">View all →</a></div>
+          <div class="table-container">
+            <table>
+              <thead><tr><th>From</th><th>Type</th><th>Message</th><th>Status</th></tr></thead>
+              <tbody id="dash-messages-tbody"><tr><td colspan="4" style="text-align:center;">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="panel-title">Upcoming Bookings</div>
+          <div class="table-container">
+            <table>
+              <thead><tr><th>Visitor</th><th>Date</th><th>Pax</th></tr></thead>
+              <tbody id="dash-bookings-tbody"><tr><td colspan="3" style="text-align:center;">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1. PRODUCTS SECTION -->
+    <section id="sec-products" class="tab-content">
+      <div class="top-bar">
+        <h2 class="page-title">Products Directory</h2>
+        <div style="display: flex; gap: 0.75rem;">
+          <input type="text" id="product-search" class="form-control" placeholder="Search products..." style="width: 220px;" onkeyup="loadProducts()" />
+          <button class="btn btn-primary" onclick="openProductModal()">
+            <i class="fa-solid fa-plus"></i> Add Product
+          </button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Product Name</th>
+                <th>Category</th>
+                <th>Unit Price</th>
+                <th>Stock Quantity</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="products-tbody">
+              <tr><td colspan="7" style="text-align: center;">Loading products...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. INVENTORY LOGS SECTION -->
+    <section id="sec-inventory" class="tab-content">
+      <div class="top-bar">
+        <h2 class="page-title">Inventory Logs</h2>
+        <button class="btn btn-primary" onclick="openLogModal()">
+          <i class="fa-solid fa-arrow-right-arrow-left"></i> Record Adjustment
+        </button>
+      </div>
+      <div class="card">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Product</th>
+                <th>Adjustment Type</th>
+                <th>Quantity</th>
+                <th>Reason / Notes</th>
+              </tr>
+            </thead>
+            <tbody id="inventory-tbody">
+              <tr><td colspan="5" style="text-align: center;">Loading inventory logs...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. ORDERS SECTION -->
+    <section id="sec-orders" class="tab-content">
+      <div class="top-bar">
+        <h2 class="page-title">Customer Orders</h2>
+        <input type="text" id="order-search" class="form-control" placeholder="Search by name, order #, or email..." style="width: 300px;" onkeyup="loadOrders()" />
+      </div>
+      <div class="card">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Order #</th>
+                <th>Customer</th>
+                <th>Total Amount</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="orders-tbody">
+              <tr><td colspan="6" style="text-align: center;">Loading orders...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. VISIT BOOKINGS SECTION -->
+    <section id="sec-bookings" class="tab-content">
+      <div class="top-bar">
+        <h2 class="page-title">Visit & Workshop Bookings</h2>
+      </div>
+      <div class="card">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Visitor Name</th>
+                <th>Date & Time</th>
+                <th>Pax</th>
+                <th>Visit Type</th>
+                <th>Status</th>
+                <th>Update Status</th>
+              </tr>
+            </thead>
+            <tbody id="bookings-tbody">
+              <tr><td colspan="6" style="text-align: center;">Loading visit bookings...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. MESSAGES / INQUIRIES SECTION -->
+    <section id="sec-messages" class="tab-content">
+      <div class="top-bar">
+        <h2 class="page-title">Messages &amp; Inquiries</h2>
+        <input type="text" id="message-search" class="form-control" placeholder="Search by name, email, or message…" style="width: 300px;" onkeyup="loadMessages()" />
+      </div>
+      <div class="card">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>From</th>
+                <th>Type</th>
+                <th>Message</th>
+                <th>Received</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="messages-tbody">
+              <tr><td colspan="6" style="text-align: center;">Loading messages...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. STAFF SECTION -->
+    <section id="sec-staff" class="tab-content">
+      <div class="top-bar">
+        <h2 class="page-title">Staff &amp; Access</h2>
+        <button class="btn btn-primary" onclick="openStaffModal()">
+          <i class="fa-solid fa-user-plus"></i> Add Staff
+        </button>
+      </div>
+      <div class="card">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Contact</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Last Active</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="staff-tbody">
+              <tr><td colspan="6" style="text-align: center;">Loading staff...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. SITE SETTINGS SECTION -->
+    <section id="sec-settings" class="tab-content">
+      <div class="top-bar">
+        <h2 class="page-title">Store Settings</h2>
+        <button class="btn btn-primary" onclick="saveSettings()">
+          <i class="fa-solid fa-floppy-disk"></i> Save Changes
+        </button>
+      </div>
+      <div class="card" style="padding: 1.5rem; max-width: 600px;">
+        <div class="input-group">
+          <label for="setting-shipping">Standard Shipping Fee (PHP)</label>
+          <input type="number" id="setting-shipping" class="form-control" placeholder="100.00" step="0.01" />
+        </div>
+        <div class="input-group">
+          <label for="setting-hours">Operating Hours</label>
+          <input type="text" id="setting-hours" class="form-control" placeholder="e.g. Mon-Sat: 8:00 AM - 5:00 PM" />
+        </div>
+        <div class="input-group">
+          <label for="setting-contact">Contact Phone Number</label>
+          <input type="text" id="setting-contact" class="form-control" placeholder="e.g. +63 917 123 4567" />
+        </div>
+        <div class="input-group">
+          <label for="setting-banner">Store Announcement Banner</label>
+          <textarea id="setting-banner" class="form-control" rows="3" placeholder="Announcement shown on storefront..."></textarea>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- PRODUCT MODAL -->
+  <div id="product-modal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-product-title">Add New Product</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeProductModal()">✕</button>
+      </div>
+      <form id="product-form">
+        <input type="hidden" id="prod-id" />
+        <div class="input-group">
+          <label for="prod-name">Product Name</label>
+          <input type="text" id="prod-name" class="form-control" required />
+        </div>
+        <div class="input-group">
+          <label for="prod-image">Image URL</label>
+          <input type="url" id="prod-image" class="form-control" placeholder="https://..." />
+        </div>
+        <div class="input-group">
+          <label for="prod-category">Category</label>
+          <input type="text" id="prod-category" class="form-control" placeholder="Pure Tablea, Sweetened, Cocoa Powder..." />
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="input-group">
+            <label for="prod-price">Unit Price (PHP)</label>
+            <input type="number" step="0.01" id="prod-price" class="form-control" required />
+          </div>
+          <div class="input-group">
+            <label for="prod-stock">Current Stock</label>
+            <input type="number" id="prod-stock" class="form-control" value="0" required />
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="input-group">
+            <label for="prod-threshold">Low Stock Warning Limit</label>
+            <input type="number" id="prod-threshold" class="form-control" value="5" required />
+          </div>
+          <div class="input-group">
+            <label for="prod-status">Status</label>
+            <select id="prod-status" class="form-control">
+              <option value="draft">Draft</option>
+              <option value="active">Active</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeProductModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- INVENTORY LOG MODAL -->
+  <div id="log-modal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Record Stock Adjustment</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeLogModal()">✕</button>
+      </div>
+      <form id="log-form">
+        <div class="input-group">
+          <label for="log-product">Target Product</label>
+          <select id="log-product" class="form-control" required></select>
+        </div>
+        <div class="input-group">
+          <label for="log-type">Adjustment Action</label>
+          <select id="log-type" class="form-control" required>
+            <option value="restock">Restock (+)</option>
+            <option value="sale">Manual Sale (-)</option>
+            <option value="damaged">Damaged / Expired (-)</option>
+            <option value="correction">Inventory Correction (+/-)</option>
+            <option value="return">Customer Return (+)</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label for="log-amount">Quantity Change (+ to increase, - to decrease)</label>
+          <input type="number" id="log-amount" class="form-control" placeholder="e.g., 50 or -5" required />
+        </div>
+        <div class="input-group">
+          <label for="log-reason">Reason / Remarks</label>
+          <input type="text" id="log-reason" class="form-control" placeholder="New production batch, spoilage..." />
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeLogModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Log</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ORDER ITEMS MODAL -->
+  <div id="order-modal" class="modal-backdrop">
+    <div class="modal" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3 id="order-modal-title">Order Details</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeOrderModal()">✕</button>
+      </div>
+      <div id="order-details-content" style="margin-bottom: 1.5rem; font-size: 0.875rem; color: var(--text-muted);">
+        <!-- Injected via JS -->
+      </div>
+      <div class="card">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Price</th>
+                <th>Qty</th>
+                <th>Subtotal</th>
+              </tr>
+            </thead>
+            <tbody id="order-items-tbody">
+              <!-- Injected via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MESSAGE DETAIL MODAL -->
+  <div id="message-modal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="message-modal-title">Message</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeMessageModal()">✕</button>
+      </div>
+      <div id="message-modal-content" style="font-size:.9rem; line-height:1.6;"></div>
+      <div class="input-group" style="margin-top:1.25rem;">
+        <label for="message-status-select">Status</label>
+        <select id="message-status-select" class="form-control">
+          <option value="new">New</option>
+          <option value="in_progress">In Progress</option>
+          <option value="resolved">Resolved</option>
+        </select>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:.75rem; margin-top:1rem;">
+        <button type="button" class="btn btn-secondary" onclick="closeMessageModal()">Close</button>
+        <button type="button" class="btn btn-primary" onclick="saveMessageStatus()">Save Status</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAFF MODAL -->
+  <div id="staff-modal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Add Staff Member</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeStaffModal()">✕</button>
+      </div>
+      <p style="color:var(--text-muted); font-size:.8125rem; margin-bottom:1.25rem;">
+        This creates a real dashboard login for this person and generates a one-time temporary password for you to share with them securely.
+      </p>
+      <form id="staff-form">
+        <div class="input-group">
+          <label for="staff-name">Full Name</label>
+          <input type="text" id="staff-name" class="form-control" required />
+        </div>
+        <div class="input-group">
+          <label for="staff-email">Email Address</label>
+          <input type="email" id="staff-email" class="form-control" required />
+        </div>
+        <div class="input-group">
+          <label for="staff-phone">Phone <span style="text-transform:none; font-weight:400;">(optional)</span></label>
+          <input type="text" id="staff-phone" class="form-control" />
+        </div>
+        <div class="input-group">
+          <label for="staff-role">Role</label>
+          <select id="staff-role" class="form-control">
+            <option value="staff">Staff (view-only day-to-day)</option>
+            <option value="manager">Manager (orders, inventory, bookings)</option>
+            <option value="admin">Admin (full access)</option>
+          </select>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeStaffModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="staff-submit-btn">Create Account</button>
+        </div>
+      </form>
+      <div id="staff-result" style="margin-top:1.25rem;"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================================== -->
+  <!-- FULL JAVASCRIPT APPLICATION ENGINE -->
+  <!-- ============================================================================== -->
+  <script>
+    // 1. SUPABASE CLIENT INITIALIZATION
+    // Replace these credentials with your Netlify environment variables or direct Supabase details
+    const SUPABASE_URL = 'https://mmbdewpfmybfkczczdhn.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tYmRld3BmbXliZmtjemN6ZGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA0ODMwNDYsImV4cCI6MjEwNjA1OTA0Nn0.S5MVJu4X2nz_jg20nWBSGOl28OqYrHZgCvh9UVFVxdQ';
+
+    if (typeof supabase === 'undefined' || !supabase.createClient) {
+      document.addEventListener('DOMContentLoaded', () => {
+        document.body.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:center;height:100vh;width:100%;background:#0f172a;color:#f8fafc;text-align:center;padding:2rem;font-family:sans-serif;">
+            <div>
+              <h2 style="margin-bottom:0.75rem;">⚠️ Failed to load Supabase SDK</h2>
+              <p style="color:#94a3b8;">Check your internet connection or ad-blocker, then refresh the page.</p>
+            </div>
+          </div>`;
+      });
+      throw new Error('Supabase SDK failed to load from CDN.');
+    }
+
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // 2. GLOBAL UTILITIES & NOTIFICATIONS
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      
+      let icon = 'fa-circle-info';
+      if (type === 'success') icon = 'fa-circle-check';
+      if (type === 'error') icon = 'fa-triangle-exclamation';
+
+      toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${escapeHTML(message)}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, match => {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[match];
+      });
+    }
+
+    function formatPHP(amount) {
+      return '₱' + parseFloat(amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function handleImageError(imgEl) {
+      imgEl.style.display = 'none';
+      const fallbackText = document.getElementById('brand-text-fallback');
+      if (fallbackText) fallbackText.style.display = 'inline';
+      const authTitle = document.getElementById('auth-title-brand');
+      if (authTitle) authTitle.style.display = 'block';
+    }
+
+    // 3. AUTHENTICATION CONTROLLER
+    const authOverlay = document.getElementById('auth-overlay');
+    const loginForm = document.getElementById('login-form');
+    let CURRENT_SESSION = null;
+    let heartbeatTimer = null;
+
+    // --- 24-hour hard session timeout, counted from the moment the person
+    // actually typed their credentials in (not from each page reload / token
+    // refresh). Supabase's own JWT auto-refreshes indefinitely by default,
+    // so this is enforced client-side against a timestamp in localStorage.
+    const SESSION_TIMEOUT_MS = 24 * 60 * 60 * 1000;
+    const LOGIN_AT_KEY = 'bt_admin_login_at';
+
+    function markLoginNow() {
+      localStorage.setItem(LOGIN_AT_KEY, String(Date.now()));
+    }
+    function getLoginAt() {
+      const v = localStorage.getItem(LOGIN_AT_KEY);
+      return v ? Number(v) : null;
+    }
+    function clearLoginAt() {
+      localStorage.removeItem(LOGIN_AT_KEY);
+    }
+    function sessionExpired() {
+      const loginAt = getLoginAt();
+      if (!loginAt) return false;
+      return (Date.now() - loginAt) >= SESSION_TIMEOUT_MS;
+    }
+    async function enforceSessionTimeout() {
+      if (!CURRENT_SESSION) return;
+      if (sessionExpired()) {
+        await db.auth.signOut();
+        clearLoginAt();
+        showToast('Your session expired after 24 hours — please sign in again.', 'info');
+      }
+    }
+
+    async function onSignedIn(session) {
+      // No recorded login time (e.g. very first run after this feature
+      // shipped) — treat this moment as the start of the 24h window.
+      if (!getLoginAt()) markLoginNow();
+
+      if (sessionExpired()) {
+        await db.auth.signOut();
+        clearLoginAt();
+        showToast('Your session expired after 24 hours — please sign in again.', 'info');
+        return;
+      }
+
+      CURRENT_SESSION = session;
+      authOverlay.style.display = 'none';
+      await setupSessionCard(session);
+      startHeartbeat();
+      switchTab('dashboard', document.querySelector('.nav-item'));
+    }
+
+    function onSignedOut() {
+      CURRENT_SESSION = null;
+      authOverlay.style.display = 'flex';
+      if (heartbeatTimer) clearInterval(heartbeatTimer);
+      document.getElementById('session-card').style.display = 'none';
+    }
+
+    async function initApp() {
+      // Listen for auth changes dynamically
+      db.auth.onAuthStateChange((event, session) => {
+        if (session) onSignedIn(session); else onSignedOut();
+      });
+
+      const { data: { session } } = await db.auth.getSession();
+      if (session) onSignedIn(session); else onSignedOut();
+    }
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn-login');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...`;
+
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+
+      const { data, error } = await db.auth.signInWithPassword({ email, password });
+
+      btn.disabled = false;
+      btn.innerHTML = `<i class="fa-solid fa-right-to-bracket"></i> Sign In`;
+
+      if (error) {
+        showToast('Login Failed: ' + error.message, 'error');
+      } else {
+        markLoginNow(); // a real, fresh sign-in — this starts the 24h clock
+        showToast('Signed in successfully', 'success');
+        await onSignedIn(data.session);
+      }
+    });
+
+    async function handleLogout() {
+      await db.auth.signOut();
+      clearLoginAt();
+      showToast('Logged out', 'info');
+    }
+
+    // 4. TAB SWITCHING SYSTEM
+    function switchTab(tabKey, element) {
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+
+      if (element) element.classList.add('active');
+      document.getElementById(`sec-${tabKey}`).classList.add('active');
+      toggleSidebar(false);
+
+      if (tabKey === 'dashboard') loadDashboard();
+      if (tabKey === 'products') loadProducts();
+      if (tabKey === 'inventory') loadInventoryLogs();
+      if (tabKey === 'orders') loadOrders();
+      if (tabKey === 'bookings') loadBookings();
+      if (tabKey === 'messages') loadMessages();
+      if (tabKey === 'staff') loadStaff();
+      if (tabKey === 'settings') loadSettings();
+    }
+
+    function toggleSidebar(force) {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      const open = typeof force === 'boolean' ? force : !sidebar.classList.contains('open');
+      sidebar.classList.toggle('open', open);
+      overlay.classList.toggle('show', open);
+    }
+
+    // 5. SESSION / "CURRENTLY SIGNED IN" + PRESENCE HEARTBEAT
+    async function setupSessionCard(session) {
+      const user = session.user;
+      const { data: staffRow } = await db.from('staff').select('*').eq('auth_user_id', user.id).maybeSingle();
+
+      const label = (staffRow && staffRow.full_name) || user.email;
+      const initials = label.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+
+      document.getElementById('session-card').style.display = 'flex';
+      document.getElementById('session-avatar').innerHTML = `${escapeHTML(initials)}<span class="presence-dot online"></span>`;
+      document.getElementById('session-email').textContent = label;
+      document.getElementById('session-role').textContent = (staffRow && staffRow.role) || 'admin';
+    }
+
+    async function heartbeat() {
+      if (!CURRENT_SESSION) return;
+      await enforceSessionTimeout();
+      if (!CURRENT_SESSION) return; // may have just been signed out above
+      await db.from('staff')
+        .update({ last_seen_at: new Date().toISOString() })
+        .eq('auth_user_id', CURRENT_SESSION.user.id);
+    }
+
+    function startHeartbeat() {
+      heartbeat();
+      if (heartbeatTimer) clearInterval(heartbeatTimer);
+      heartbeatTimer = setInterval(heartbeat, 45000);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') heartbeat();
+      });
+    }
+
+    // 5. PRODUCTS MODULE
+    async function loadProducts() {
+      const tbody = document.getElementById('products-tbody');
+      const search = document.getElementById('product-search').value.trim();
+
+      let query = db.from('products').select('*').order('created_at', { ascending: false });
+      if (search) {
+        query = query.ilike('name', `%${search}%`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="7" style="color:var(--danger)">Error: ${escapeHTML(error.message)}</td></tr>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center;">No products found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map(p => `
+        <tr>
+          <td>
+            ${p.image_url 
+              ? `<img src="${escapeHTML(p.image_url)}" style="width:40px; height:40px; object-fit:cover; border-radius:6px;" onerror="this.src='https://via.placeholder.com/40?text=BT'" />` 
+              : `<div style="width:40px; height:40px; background:var(--bg-surface-elevated); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:0.75rem;"><i class="fa-solid fa-image"></i></div>`}
+          </td>
+          <td><strong>${escapeHTML(p.name)}</strong></td>
+          <td>${escapeHTML(p.category) || '-'}</td>
+          <td>${formatPHP(p.unit_price)}</td>
+          <td>
+            ${p.stock_quantity <= p.low_stock_threshold 
+              ? `<span style="color:var(--danger); font-weight:700;"><i class="fa-solid fa-triangle-exclamation"></i> ${p.stock_quantity}</span>` 
+              : p.stock_quantity}
+          </td>
+          <td><span class="badge badge-${p.status}">${p.status}</span></td>
+          <td>
+            <button class="btn btn-secondary btn-sm" onclick="editProduct('${p.id}')">
+              <i class="fa-solid fa-pen"></i> Edit
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}', '${escapeHTML(p.name)}')">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openProductModal() {
+      document.getElementById('product-form').reset();
+      document.getElementById('prod-id').value = '';
+      document.getElementById('modal-product-title').innerText = 'Add New Product';
+      document.getElementById('product-modal').classList.add('active');
+    }
+
+    function closeProductModal() {
+      document.getElementById('product-modal').classList.remove('active');
+    }
+
+    document.getElementById('product-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('prod-id').value;
+      const name = document.getElementById('prod-name').value;
+      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+
+      const payload = {
+        name,
+        slug,
+        image_url: document.getElementById('prod-image').value || null,
+        category: document.getElementById('prod-category').value || null,
+        unit_price: parseFloat(document.getElementById('prod-price').value),
+        stock_quantity: parseInt(document.getElementById('prod-stock').value),
+        low_stock_threshold: parseInt(document.getElementById('prod-threshold').value),
+        status: document.getElementById('prod-status').value
+      };
+
+      let error;
+      if (id) {
+        ({ error } = await db.from('products').update(payload).eq('id', id));
+      } else {
+        ({ error } = await db.from('products').insert([payload]));
+      }
+
+      if (error) {
+        showToast('Error saving product: ' + error.message, 'error');
+      } else {
+        showToast(`Product ${id ? 'updated' : 'created'} successfully!`, 'success');
+        closeProductModal();
+        loadProducts();
+      }
+    });
+
+    async function editProduct(id) {
+      const { data, error } = await db.from('products').select('*').eq('id', id).single();
+      if (error || !data) return showToast('Could not fetch product details', 'error');
+
+      document.getElementById('prod-id').value = data.id;
+      document.getElementById('prod-name').value = data.name;
+      document.getElementById('prod-image').value = data.image_url || '';
+      document.getElementById('prod-category').value = data.category || '';
+      document.getElementById('prod-price').value = data.unit_price;
+      document.getElementById('prod-stock').value = data.stock_quantity;
+      document.getElementById('prod-threshold').value = data.low_stock_threshold || 5;
+      document.getElementById('prod-status').value = data.status;
+
+      document.getElementById('modal-product-title').innerText = 'Edit Product';
+      document.getElementById('product-modal').classList.add('active');
+    }
+
+    async function deleteProduct(id, name) {
+      if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) return;
+
+      const { error } = await db.from('products').delete().eq('id', id);
+      if (error) showToast('Delete failed: ' + error.message, 'error');
+      else {
+        showToast(`Deleted ${name}`, 'success');
+        loadProducts();
+      }
+    }
+
+    // 6. INVENTORY LOGS & STOCK ADJUSTMENT MODULE
+    async function loadInventoryLogs() {
+      const tbody = document.getElementById('inventory-tbody');
+      const { data, error } = await db
+        .from('inventory_logs')
+        .select('*, products(name)')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="5" style="color:var(--danger)">Error: ${escapeHTML(error.message)}</td></tr>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">No inventory activity logged.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map(log => `
+        <tr>
+          <td>${new Date(log.created_at).toLocaleString('en-PH')}</td>
+          <td><strong>${log.products ? escapeHTML(log.products.name) : 'Unlinked Product'}</strong></td>
+          <td><span class="badge badge-pending">${escapeHTML(log.change_type)}</span></td>
+          <td style="font-weight:700; color: ${log.change_amount >= 0 ? 'var(--success)' : 'var(--danger)'}">
+            ${log.change_amount > 0 ? '+' : ''}${log.change_amount}
+          </td>
+          <td>${escapeHTML(log.reason) || '-'}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function openLogModal() {
+      const select = document.getElementById('log-product');
+      const { data } = await db.from('products').select('id, name, stock_quantity');
+      
+      select.innerHTML = (data || []).map(p => 
+        `<option value="${p.id}">${escapeHTML(p.name)} (Current Stock: ${p.stock_quantity})</option>`
+      ).join('');
+
+      document.getElementById('log-form').reset();
+      document.getElementById('log-modal').classList.add('active');
+    }
+
+    function closeLogModal() {
+      document.getElementById('log-modal').classList.remove('active');
+    }
+
+    document.getElementById('log-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const productId = document.getElementById('log-product').value;
+      const changeAmount = parseInt(document.getElementById('log-amount').value);
+      const changeType = document.getElementById('log-type').value;
+      const reason = document.getElementById('log-reason').value;
+
+      // 1. Fetch current stock
+      const { data: prod } = await db.from('products').select('stock_quantity').eq('id', productId).single();
+      if (!prod) return showToast('Target product not found', 'error');
+
+      const updatedStock = Math.max(0, prod.stock_quantity + changeAmount);
+
+      // 2. Insert Log
+      const { error: logErr } = await db.from('inventory_logs').insert([{
+        product_id: productId,
+        change_amount: changeAmount,
+        change_type: changeType,
+        reason: reason
+      }]);
+
+      if (logErr) return showToast('Log entry failed: ' + logErr.message, 'error');
+
+      // 3. Sync update product stock
+      const { error: prodErr } = await db.from('products').update({ stock_quantity: updatedStock }).eq('id', productId);
+      if (prodErr) showToast('Stock quantity sync failed: ' + prodErr.message, 'error');
+
+      showToast('Stock adjustment applied!', 'success');
+      closeLogModal();
+      loadInventoryLogs();
+    });
+
+    // 7. ORDERS MODULE
+    async function loadOrders() {
+      const tbody = document.getElementById('orders-tbody');
+      const search = document.getElementById('order-search').value.trim();
+
+      let query = db.from('orders').select('*').order('created_at', { ascending: false });
+      if (search) {
+        query = query.or(`customer_name.ilike.%${search}%,order_number.ilike.%${search}%,customer_email.ilike.%${search}%`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="6" style="color:var(--danger)">Error: ${escapeHTML(error.message)}</td></tr>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">No orders recorded.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map(o => `
+        <tr>
+          <td><strong>${escapeHTML(o.order_number)}</strong></td>
+          <td>
+            ${escapeHTML(o.customer_name)}<br/>
+            <small style="color: var(--text-muted);">${escapeHTML(o.customer_email) || 'No email'}</small>
+          </td>
+          <td><strong>${formatPHP(o.total_amount)}</strong></td>
+          <td><span class="badge badge-${o.status}">${o.status}</span></td>
+          <td>${new Date(o.created_at).toLocaleDateString('en-PH')}</td>
+          <td>
+            <div style="display:flex; gap:0.5rem; align-items:center;">
+              <select class="form-control" style="padding:0.25rem 0.5rem; font-size:0.8125rem;" onchange="updateOrderStatus('${o.id}', this.value)">
+                ${['pending','processing','shipped','completed','cancelled'].map(s => 
+                  `<option value="${s}" ${o.status === s ? 'selected' : ''}>${s}</option>`
+                ).join('')}
+              </select>
+              <button class="btn btn-secondary btn-sm" onclick="viewOrderItems('${o.id}', '${escapeHTML(o.order_number)}')">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function updateOrderStatus(orderId, status) {
+      const { error } = await db.from('orders').update({ status }).eq('id', orderId);
+      if (error) showToast('Failed updating order: ' + error.message, 'error');
+      else showToast('Order status updated', 'success');
+      loadOrders();
+    }
+
+    async function viewOrderItems(orderId, orderNum) {
+      document.getElementById('order-modal-title').innerText = `Order #${orderNum}`;
+      const tbody = document.getElementById('order-items-tbody');
+      const detailsDiv = document.getElementById('order-details-content');
+
+      const { data: order } = await db.from('orders').select('*').eq('id', orderId).single();
+      const { data: items } = await db.from('order_items').select('*').eq('order_id', orderId);
+
+      if (order) {
+        detailsDiv.innerHTML = `
+          <strong>Customer:</strong> ${escapeHTML(order.customer_name)} (${escapeHTML(order.customer_phone || 'No phone')})<br/>
+          <strong>Shipping Address:</strong> ${escapeHTML(order.shipping_address || 'N/A')}
+        `;
+      }
+
+      if (!items || items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No line items found for this order.</td></tr>`;
+      } else {
+        tbody.innerHTML = items.map(item => `
+          <tr>
+            <td>${escapeHTML(item.product_name)}</td>
+            <td>${formatPHP(item.unit_price)}</td>
+            <td>${item.quantity}</td>
+            <td>${formatPHP(item.subtotal)}</td>
+          </tr>
+        `).join('');
+      }
+
+      document.getElementById('order-modal').classList.add('active');
+    }
+
+    function closeOrderModal() {
+      document.getElementById('order-modal').classList.remove('active');
+    }
+
+    // 8. VISIT BOOKINGS MODULE
+    async function loadBookings() {
+      const tbody = document.getElementById('bookings-tbody');
+      const { data, error } = await db.from('visit_bookings').select('*').order('visit_date', { ascending: true });
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="6" style="color:var(--danger)">Error: ${escapeHTML(error.message)}</td></tr>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">No scheduled visit bookings.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map(b => `
+        <tr>
+          <td>
+            <strong>${escapeHTML(b.visitor_name)}</strong><br/>
+            <small style="color:var(--text-muted);">${escapeHTML(b.visitor_email || b.visitor_phone || '')}</small>
+          </td>
+          <td>${b.visit_date}<br/><small style="color:var(--text-muted);">${escapeHTML(b.time_slot || '')}</small></td>
+          <td>${b.pax} pax</td>
+          <td><span class="badge badge-pending">${escapeHTML(b.visit_type)}</span></td>
+          <td><span class="badge badge-${b.status}">${b.status}</span></td>
+          <td>
+            <select class="form-control" style="padding:0.25rem 0.5rem; font-size:0.8125rem;" onchange="updateBookingStatus('${b.id}', this.value)">
+              ${['pending','approved','completed','declined','cancelled'].map(s => 
+                `<option value="${s}" ${b.status === s ? 'selected' : ''}>${s}</option>`
+              ).join('')}
+            </select>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function updateBookingStatus(bookingId, status) {
+      const { error } = await db.from('visit_bookings').update({ status }).eq('id', bookingId);
+      if (error) showToast('Booking update failed: ' + error.message, 'error');
+      else showToast('Booking status saved', 'success');
+      loadBookings();
+    }
+
+    // 9. SITE SETTINGS MODULE
+    async function loadSettings() {
+      const { data } = await db.from('site_settings').select('*');
+      if (data) {
+        data.forEach(item => {
+          if (item.key === 'shipping_rate') document.getElementById('setting-shipping').value = item.value;
+          if (item.key === 'operating_hours') document.getElementById('setting-hours').value = item.value;
+          if (item.key === 'contact_phone') document.getElementById('setting-contact').value = item.value;
+          if (item.key === 'announcement_banner') document.getElementById('setting-banner').value = item.value;
+        });
+      }
+    }
+
+    async function saveSettings() {
+      const rows = [
+        { key: 'shipping_rate', value: document.getElementById('setting-shipping').value },
+        { key: 'operating_hours', value: document.getElementById('setting-hours').value },
+        { key: 'contact_phone', value: document.getElementById('setting-contact').value },
+        { key: 'announcement_banner', value: document.getElementById('setting-banner').value }
+      ];
+
+      const { error } = await db.from('site_settings').upsert(rows, { onConflict: 'key' });
+      if (error) showToast('Error saving settings: ' + error.message, 'error');
+      else showToast('Store settings updated!', 'success');
+    }
+
+    // 10. DASHBOARD MODULE
+    function timeAgo(iso) {
+      if (!iso) return 'never';
+      const diffMs = Date.now() - new Date(iso).getTime();
+      const mins = Math.round(diffMs / 60000);
+      if (mins < 1) return 'just now';
+      if (mins < 60) return mins + 'm ago';
+      const hrs = Math.round(mins / 60);
+      if (hrs < 24) return hrs + 'h ago';
+      return Math.round(hrs / 24) + 'd ago';
+    }
+
+    async function loadDashboard() {
+      const [ordersRes, productsRes, inquiriesRes, bookingsRes, staffRes] = await Promise.all([
+        db.from('orders').select('*').order('created_at', { ascending: false }),
+        db.from('products').select('id, status, stock_quantity, low_stock_threshold'),
+        db.from('inquiries').select('*').order('created_at', { ascending: false }),
+        db.from('visit_bookings').select('*').order('visit_date', { ascending: true }),
+        db.from('staff').select('*').order('last_seen_at', { ascending: false })
+      ]);
+
+      const orders = ordersRes.data || [];
+      const products = productsRes.data || [];
+      const inquiries = inquiriesRes.data || [];
+      const bookings = bookingsRes.data || [];
+      const staff = staffRes.data || [];
+
+      // KPIs
+      const revenue = orders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + Number(o.total_amount || 0), 0);
+      document.getElementById('kpi-revenue').textContent = formatPHP(revenue);
+      document.getElementById('kpi-revenue-sub').textContent = orders.length + ' orders total';
+      document.getElementById('kpi-orders').textContent = orders.length;
+      const pending = orders.filter(o => o.status === 'pending').length;
+      document.getElementById('kpi-orders-sub').textContent = pending + ' awaiting action';
+      document.getElementById('kpi-pending').textContent = pending;
+
+      const lowStock = products.filter(p => p.stock_quantity <= p.low_stock_threshold);
+      document.getElementById('kpi-lowstock').textContent = lowStock.length;
+
+      const newInquiries = inquiries.filter(i => i.status === 'new').length;
+      document.getElementById('kpi-inquiries').textContent = newInquiries;
+      const nowStr = new Date().toISOString().slice(0, 10);
+      const upcomingBookings = bookings.filter(b => b.visit_date >= nowStr && ['pending', 'approved'].includes(b.status));
+      document.getElementById('kpi-bookings').textContent = upcomingBookings.length;
+
+      const onlineCutoff = Date.now() - 5 * 60 * 1000;
+      const onlineStaff = staff.filter(s => s.last_seen_at && new Date(s.last_seen_at).getTime() > onlineCutoff);
+      document.getElementById('kpi-online').textContent = onlineStaff.length;
+      document.getElementById('kpi-products').textContent = products.filter(p => p.status === 'active').length;
+
+      // messages nav badge
+      const navBadge = document.getElementById('messages-nav-badge');
+      if (newInquiries > 0) { navBadge.textContent = newInquiries; navBadge.style.display = 'inline-flex'; }
+      else { navBadge.style.display = 'none'; }
+
+      // recent orders
+      const dOrders = document.getElementById('dash-orders-tbody');
+      dOrders.innerHTML = orders.length ? orders.slice(0, 5).map(o => `
+        <tr>
+          <td><strong>${escapeHTML(o.order_number)}</strong></td>
+          <td>${escapeHTML(o.customer_name)}</td>
+          <td>${formatPHP(o.total_amount)}</td>
+          <td><span class="badge badge-${o.status}">${o.status}</span></td>
+          <td>${new Date(o.created_at).toLocaleDateString('en-PH')}</td>
+        </tr>`).join('') : `<tr><td colspan="5" style="text-align:center;">No orders yet.</td></tr>`;
+
+      // recent messages
+      const dMsgs = document.getElementById('dash-messages-tbody');
+      dMsgs.innerHTML = inquiries.length ? inquiries.slice(0, 5).map(i => `
+        <tr>
+          <td><strong>${escapeHTML(i.name)}</strong></td>
+          <td><span class="badge badge-pending">${escapeHTML(i.inquiry_type)}</span></td>
+          <td style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHTML(i.message)}</td>
+          <td><span class="badge badge-${i.status}">${escapeHTML(i.status).replace('_',' ')}</span></td>
+        </tr>`).join('') : `<tr><td colspan="4" style="text-align:center;">No messages yet.</td></tr>`;
+
+      // upcoming bookings
+      const dBook = document.getElementById('dash-bookings-tbody');
+      dBook.innerHTML = upcomingBookings.length ? upcomingBookings.slice(0, 5).map(b => `
+        <tr>
+          <td><strong>${escapeHTML(b.visitor_name)}</strong></td>
+          <td>${b.visit_date}</td>
+          <td>${b.pax} pax</td>
+        </tr>`).join('') : `<tr><td colspan="3" style="text-align:center;">No upcoming visits.</td></tr>`;
+
+      // currently online panel
+      const presenceEl = document.getElementById('dash-presence-list');
+      if (!onlineStaff.length) {
+        presenceEl.innerHTML = `<li class="empty-mini">Nobody else is online right now.</li>`;
+      } else {
+        presenceEl.innerHTML = onlineStaff.map(s => {
+          const initials = (s.full_name || s.email).split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+          return `
+          <li class="presence-item">
+            <div class="presence-avatar">${escapeHTML(initials)}<span class="presence-dot online"></span></div>
+            <div>
+              <div class="presence-name">${escapeHTML(s.full_name)}</div>
+              <div class="presence-meta">${escapeHTML(s.role)} · active ${timeAgo(s.last_seen_at)}</div>
+            </div>
+          </li>`;
+        }).join('');
+      }
+    }
+
+    // 11. MESSAGES / INQUIRIES MODULE
+    let activeMessageId = null;
+    async function loadMessages() {
+      const tbody = document.getElementById('messages-tbody');
+      const search = document.getElementById('message-search').value.trim();
+
+      let query = db.from('inquiries').select('*').order('created_at', { ascending: false });
+      if (search) {
+        query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,message.ilike.%${search}%`);
+      }
+      const { data, error } = await query;
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="6" style="color:var(--danger)">Error: ${escapeHTML(error.message)}</td></tr>`;
+        return;
+      }
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">No messages yet.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map(i => `
+        <tr>
+          <td>
+            <strong>${escapeHTML(i.name)}</strong><br/>
+            <small style="color:var(--text-muted);">${escapeHTML(i.email)}</small>
+          </td>
+          <td><span class="badge badge-pending">${escapeHTML(i.inquiry_type)}</span></td>
+          <td style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHTML(i.message)}</td>
+          <td>${new Date(i.created_at).toLocaleDateString('en-PH')}</td>
+          <td><span class="badge badge-${i.status}">${escapeHTML(i.status).replace('_',' ')}</span></td>
+          <td><button class="btn btn-secondary btn-sm" onclick="openMessageModal('${i.id}')"><i class="fa-solid fa-eye"></i> View</button></td>
+        </tr>`).join('');
+    }
+
+    async function openMessageModal(id) {
+      const { data, error } = await db.from('inquiries').select('*').eq('id', id).single();
+      if (error || !data) return showToast('Could not load message', 'error');
+      activeMessageId = id;
+      document.getElementById('message-modal-title').textContent = `${data.name} — ${data.inquiry_type}`;
+      document.getElementById('message-modal-content').innerHTML = `
+        <p><strong>Email:</strong> ${escapeHTML(data.email)}</p>
+        <p><strong>Phone:</strong> ${escapeHTML(data.phone) || 'Not provided'}</p>
+        ${data.company ? `<p><strong>Business/Farm:</strong> ${escapeHTML(data.company)}</p>` : ''}
+        <p><strong>Received:</strong> ${new Date(data.created_at).toLocaleString('en-PH')}</p>
+        <hr style="border-color:var(--border-color); margin:1rem 0;">
+        <p style="white-space:pre-wrap;">${escapeHTML(data.message)}</p>
+      `;
+      document.getElementById('message-status-select').value = data.status;
+      document.getElementById('message-modal').classList.add('active');
+    }
+
+    function closeMessageModal() {
+      document.getElementById('message-modal').classList.remove('active');
+      activeMessageId = null;
+    }
+
+    async function saveMessageStatus() {
+      if (!activeMessageId) return;
+      const status = document.getElementById('message-status-select').value;
+      const { error } = await db.from('inquiries').update({ status }).eq('id', activeMessageId);
+      if (error) return showToast('Failed to update: ' + error.message, 'error');
+      showToast('Message status updated', 'success');
+      closeMessageModal();
+      loadMessages();
+    }
+
+    // 12. STAFF MODULE
+    async function loadStaff() {
+      const tbody = document.getElementById('staff-tbody');
+      const { data, error } = await db.from('staff').select('*').order('created_at', { ascending: false });
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="6" style="color:var(--danger)">Error: ${escapeHTML(error.message)}</td></tr>`;
+        return;
+      }
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">No staff added yet.</td></tr>`;
+        return;
+      }
+
+      const onlineCutoff = Date.now() - 5 * 60 * 1000;
+      tbody.innerHTML = data.map(s => {
+        const online = s.last_seen_at && new Date(s.last_seen_at).getTime() > onlineCutoff;
+        const isSelf = CURRENT_SESSION && s.auth_user_id === CURRENT_SESSION.user.id;
+        return `
+        <tr>
+          <td><strong>${escapeHTML(s.full_name)}</strong> ${online ? '<span class="presence-dot online" style="position:static; display:inline-block; margin-left:.3rem;"></span>' : ''}</td>
+          <td>${escapeHTML(s.email)}<br/><small style="color:var(--text-muted);">${escapeHTML(s.phone) || 'No phone'}</small></td>
+          <td><span class="badge badge-${s.role}">${escapeHTML(s.role)}</span></td>
+          <td><span class="badge badge-${s.status}">${escapeHTML(s.status)}</span></td>
+          <td>${timeAgo(s.last_seen_at)}</td>
+          <td>
+            ${isSelf ? '<span style="color:var(--text-muted); font-size:.8125rem;">You</span>' : (s.status === 'suspended'
+              ? `<button class="btn btn-secondary btn-sm" onclick="toggleStaffStatus('${s.id}','active')"><i class="fa-solid fa-rotate-left"></i> Reactivate</button>`
+              : `<button class="btn btn-danger btn-sm" onclick="toggleStaffStatus('${s.id}','suspended')"><i class="fa-solid fa-ban"></i> Suspend</button>`)}
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    function openStaffModal() {
+      document.getElementById('staff-form').reset();
+      document.getElementById('staff-result').innerHTML = '';
+      document.getElementById('staff-modal').classList.add('active');
+    }
+
+    function closeStaffModal() {
+      document.getElementById('staff-modal').classList.remove('active');
+    }
+
+    document.getElementById('staff-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('staff-submit-btn');
+      btn.disabled = true; btn.textContent = 'Creating…';
+
+      const payload = {
+        full_name: document.getElementById('staff-name').value,
+        email: document.getElementById('staff-email').value,
+        phone: document.getElementById('staff-phone').value,
+        role: document.getElementById('staff-role').value
+      };
+
+      try {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/create-staff-account`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${CURRENT_SESSION.access_token}`,
+            'apikey': SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Could not create staff account');
+
+        document.getElementById('staff-result').innerHTML = `
+          <div class="form-success" style="border:1.5px solid var(--success); background:rgba(16,185,129,.12); border-radius:8px; padding:1rem;">
+            <strong style="display:block; color:var(--success); margin-bottom:.4rem;">Account created for ${escapeHTML(payload.full_name)}</strong>
+            <p style="font-size:.85rem; margin-bottom:.4rem;">Share these sign-in details with them securely — this password won't be shown again.</p>
+            <code style="display:block; background:var(--bg-base); padding:.6rem .8rem; border-radius:6px; font-size:.85rem;">
+              ${escapeHTML(payload.email)}<br>${escapeHTML(json.temp_password)}
+            </code>
+          </div>`;
+        showToast('Staff account created', 'success');
+        loadStaff();
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false; btn.textContent = 'Create Account';
+      }
+    });
+
+    async function toggleStaffStatus(staffId, status) {
+      if (status === 'suspended' && !confirm('Suspend this staff member? They will be signed out and unable to log in until reactivated.')) return;
+      try {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/set-staff-status`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${CURRENT_SESSION.access_token}`,
+            'apikey': SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({ staff_id: staffId, status })
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Could not update staff status');
+        showToast('Staff status updated', 'success');
+        loadStaff();
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    // INITIALIZE APPLICATION
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
 </body>
 </html>
