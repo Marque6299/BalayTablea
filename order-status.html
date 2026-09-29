@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F172A">
 <title>Track Your Order — Balay Tablea</title>
 <meta name="description" content="Check the status of your Balay Tablea order using your Order ID and email address.">
 <link rel="canonical" href="https://balaytablea.netlify.app/order-status.html">
@@ -16,56 +17,32 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
-<style>
-  .track-wrap{max-width:640px}
-  .track-card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:clamp(1.5rem,4vw,2.4rem)}
-  .track-form .field{margin-bottom:1.1rem}
-  .track-result{margin-top:2rem; display:none}
-  .track-result.show{display:block}
-  .status-pill{display:inline-flex; align-items:center; gap:.5rem; padding:.4rem 1rem; border-radius:99px; font-weight:700; font-size:.85rem; text-transform:capitalize}
-  .status-pill::before{content:""; width:.55rem; height:.55rem; border-radius:50%; background:currentColor}
-  .status-pending{background:rgba(245,158,11,.15); color:#F59E0B}
-  .status-processing{background:rgba(59,130,246,.15); color:#3B82F6}
-  .status-shipped{background:rgba(139,92,246,.15); color:#8B5CF6}
-  .status-completed{background:rgba(16,185,129,.15); color:#10B981}
-  .status-cancelled{background:rgba(239,68,68,.15); color:#EF4444}
-  .track-steps{list-style:none; margin:1.6rem 0; padding:0; display:flex; justify-content:space-between; gap:.5rem}
-  .track-steps li{flex:1; text-align:center; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted, #94A3B8); position:relative; padding-top:1.6rem}
-  .track-steps li::before{content:""; position:absolute; top:0; left:50%; transform:translateX(-50%); width:1.1rem; height:1.1rem; border-radius:50%; background:var(--line); border:2px solid var(--paper)}
-  .track-steps li::after{content:""; position:absolute; top:.5rem; left:calc(50% + .6rem); width:100%; height:2px; background:var(--line)}
-  .track-steps li:last-child::after{display:none}
-  .track-steps li.done{color:var(--ink); font-weight:700}
-  .track-steps li.done::before{background:var(--clay)}
-  .track-steps li.done::after{background:var(--clay)}
-  .track-items{margin-top:1.5rem; border-top:1px solid var(--line)}
-  .track-item-row{display:flex; justify-content:space-between; gap:1rem; padding:.75rem 0; border-bottom:1px solid var(--line); font-size:.9rem}
-  .track-item-row .qty{color:var(--text-muted, #94A3B8)}
-  .track-total-row{display:flex; justify-content:space-between; padding-top:1rem; font-weight:700; font-size:1.05rem}
-  .track-error{margin-top:1.5rem; padding:1rem 1.2rem; border-radius:8px; background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); color:#EF4444; font-size:.9rem; display:none}
-  .track-error.show{display:block}
-</style>
 </head>
 <body>
-<div id="announceBar"></div>
+<a class="skip" href="#main">Skip to content</a>
+<div id="announceBar" role="region" aria-label="Announcement"></div>
 
 <header>
   <div class="wrap nav">
-    <a href="index.html" class="brand brand-logo" style="text-decoration:none"><img src="img/logo.png" alt="Balay Tablea" width="150" height="44"><span class="brand-wordmark">BALAY TABLEA</span></a>
-    <nav class="links" id="navLinks">
+    <a href="index.html" class="brand brand-logo" style="text-decoration:none"><img src="img/logo.webp" alt="" width="56" height="40"><span class="brand-wordmark">BALAY TABLEA</span></a>
+    <nav class="links" id="navLinks" aria-label="Main">
       <a href="index.html">Home</a>
       <a href="about.html">Our Story</a>
       <a href="process.html">Our Process</a>
       <a href="shop.html">Shop</a>
       <a href="recognition.html">Recognition</a>
       <a href="visit.html">Visit Us</a>
+      <a href="contact.html" class="nav-contact">Contact &amp; Wholesale</a>
     </nav>
     <div class="navBtns">
+      <a href="shop.html#cart" class="cart-link" aria-label="Cart, 0 items"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7a3 3 0 016 0"/></svg><span class="cart-count" data-cart-count hidden>0</span></a>
       <a href="contact.html" class="btn btn-ghost">Contact &amp; Wholesale</a>
-      <button id="menuToggle" aria-label="Menu">&#9776;</button>
+      <button id="menuToggle" type="button" aria-expanded="false" aria-controls="navLinks" aria-label="Open menu">&#9776;</button>
     </div>
   </div>
 </header>
 
+<main id="main">
 <section class="page-hero" style="padding-block:clamp(3rem,7vw,5rem)">
   <div class="wrap">
     <div class="crumb"><a href="index.html">Home</a> / Track Order</div>
@@ -78,54 +55,34 @@
 <section>
   <div class="wrap track-wrap">
     <div class="track-card">
-      <form class="track-form" id="trackForm">
+      <form class="track-form" id="trackForm" novalidate>
         <div class="field">
-          <label for="t-order">Order ID</label>
-          <input id="t-order" name="order_number" placeholder="e.g. BT-260115-A9K2" required autocomplete="off">
+          <label for="t-order">Order number</label>
+          <input id="t-order" name="order_number" placeholder="e.g. BT-260928-K7M4QX" required autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="t-order-hint">
+          <p class="field-hint" id="t-order-hint">Found in your order confirmation. Format: BT-YYMMDD-XXXXXX.</p>
         </div>
         <div class="field">
           <label for="t-email">Email address</label>
-          <input id="t-email" name="email" type="email" placeholder="you@example.com" required autocomplete="off">
+          <input id="t-email" name="email" type="email" placeholder="you@example.com" required autocomplete="email">
         </div>
-        <button type="submit" class="btn btn-primary" id="trackBtn" style="width:100%; justify-content:center">Check Status</button>
+        <button type="submit" class="btn btn-primary" id="trackBtn" style="width:100%">Check status</button>
       </form>
-
-      <div class="track-error" id="trackError"></div>
-
-      <div class="track-result" id="trackResult">
-        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
-          <div>
-            <div style="font-size:.78rem; color:var(--text-muted,#94A3B8); text-transform:uppercase; letter-spacing:.04em;">Order</div>
-            <div style="font-family:'Fraunces',serif; font-size:1.3rem; font-weight:700;" id="r-order-number">—</div>
-          </div>
-          <span class="status-pill" id="r-status-pill">—</span>
-        </div>
-
-        <ol class="track-steps" id="r-steps">
-          <li data-step="pending">Placed</li>
-          <li data-step="processing">Processing</li>
-          <li data-step="shipped">Shipped</li>
-          <li data-step="completed">Completed</li>
-        </ol>
-
-        <p style="font-size:.85rem; color:var(--text-muted,#94A3B8)">Placed <span id="r-date">—</span><span id="r-address-wrap"> · Shipping to <span id="r-address"></span></span></p>
-
-        <div class="track-items" id="r-items"></div>
-        <div class="track-total-row"><span>Total</span><span id="r-total">₱0.00</span></div>
-      </div>
+      <div class="track-error" id="trackError" aria-live="assertive"></div>
+      <div class="track-result" id="trackResult" aria-live="polite"></div>
     </div>
-
-    <p style="margin-top:1.5rem; font-size:.85rem; color:var(--text-muted,#94A3B8); text-align:center;">
+    <p style="margin-top:1.5rem; font-size:.85rem; color:var(--text-muted); text-align:center; max-width:none">
       Can't find your order? <a href="contact.html">Message us</a> and we'll look it up for you.
     </p>
   </div>
 </section>
+</main>
 
 <footer>
   <div class="wrap footGrid sitemap">
-    <div class="footCol" style="max-width:240px">
-      <div class="brand brand-logo"><img src="img/logo.png" alt="Balay Tablea" width="130" height="38"></div>
+    <div class="footCol" style="max-width:260px">
+      <div class="brand brand-logo"><img src="img/logo.webp" alt="Balay Tablea" width="56" height="40" loading="lazy" decoding="async"></div>
       <p style="margin-top:.6rem; font-size:.88rem">Rizal Street, Cabatuan, Iloilo, Philippines — authorized manufacturer &amp; distributor of Tan Tono Tablea, Cabatuan's official OTOP cacao product.</p>
+      <p style="margin-top:.6rem; font-size:.88rem"><span data-setting="operating_hours">Open daily, 8:00 AM – 6:00 PM</span><br><a href="tel:+639285245579" data-setting="contact_phone" data-setting-href="tel">+63 928 524 5579</a></p>
     </div>
     <div class="footCol">
       <h4>Explore</h4>
@@ -142,25 +99,28 @@
         <li><a href="visit.html">Plan a Visit</a></li>
         <li><a href="order-status.html">Track Order</a></li>
         <li><a href="contact.html">Contact &amp; Wholesale</a></li>
+        <li><a href="https://www.facebook.com/products.balaytablea/" rel="noopener">Message on Facebook</a></li>
       </ul>
     </div>
     <div class="footCol">
       <h4>Recognized by</h4>
-      <ul style="font-size:.85rem; opacity:.85">
+      <ul style="font-size:.85rem">
         <li>Cabatuan LGU — OTOP Commodity</li>
         <li>DOST Region VI — SETUP</li>
         <li>UNESCO Cities of Gastronomy Expo</li>
       </ul>
     </div>
   </div>
-  <div class="wrap" style="margin-top:1.8rem; padding-top:1.5rem; border-top:1px solid var(--line); font-size:.82rem; opacity:.7">
-    &copy; 2026 Sunburst's Balay Tablea. Heritage chocolate, hand-made in Cabatuan, Iloilo.
+  <div class="wrap foot-legal">
+    <span>&copy; 2026 Sunburst's Balay Tablea. Heritage chocolate, hand-made in Cabatuan, Iloilo.</span>
+    <span><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></span>
   </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/supabase-client.js"></script>
-<script src="js/main.js"></script>
-<script src="js/order-status.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script defer src="js/ui.js"></script>
+<script defer src="js/supabase-client.js"></script>
+<script defer src="js/main.js"></script>
+<script defer src="js/order-status.js"></script>
 </body>
 </html>

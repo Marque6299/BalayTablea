@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F172A">
 <title>Shop — Balay Tablea</title>
 <meta name="description" content="Tablea rolls, hot tsokolate mix, raw cacao nibs, pasalubong gift sets and otap from Sunburst's Balay Tablea in Cabatuan, Iloilo.">
 <link rel="canonical" href="https://balaytablea.netlify.app/shop.html">
@@ -10,8 +11,11 @@
 <meta property="og:description" content="Tablea rolls, hot tsokolate mix, raw cacao nibs, pasalubong gift sets and otap from Sunburst's Balay Tablea in Cabatuan, Iloilo.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://balaytablea.netlify.app/shop.html">
-<meta property="og:image" content="https://www.simpol.ph/wp-content/uploads/2025/06/tablea-e1751111622159.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image" content="https://balaytablea.netlify.app/img/og-default.jpg">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://balaytablea.netlify.app/img/og-default.jpg">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8D%AB%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,7 +29,7 @@
   "alternateName": "Balay Tablea",
   "url": "https://balaytablea.netlify.app/shop.html",
   "description": "Stone-ground heritage tablea chocolate hand-made in Cabatuan, Iloilo, Philippines, wrapped in banana leaf.",
-  "image": "https://www.simpol.ph/wp-content/uploads/2025/06/tablea-e1751111622159.jpg",
+  "image": "https://balaytablea.netlify.app/img/og-default.jpg",
   "address": {
     "@type": "PostalAddress",
     "streetAddress": "Rizal Street",
@@ -41,33 +45,37 @@
 </script>
 </head>
 <body>
-<div id="announceBar"></div>
+<a class="skip" href="#main">Skip to content</a>
+<div id="announceBar" role="region" aria-label="Announcement"></div>
 
 <header>
   <div class="wrap nav">
-    <a href="index.html" class="brand brand-logo" style="text-decoration:none"><img src="img/logo.png" alt="Balay Tablea" width="150" height="44"><span class="brand-wordmark">BALAY TABLEA</span></a>
-    <nav class="links" id="navLinks">
+    <a href="index.html" class="brand brand-logo" style="text-decoration:none"><img src="img/logo.webp" alt="" width="56" height="40"><span class="brand-wordmark">BALAY TABLEA</span></a>
+    <nav class="links" id="navLinks" aria-label="Main">
       <a href="index.html">Home</a>
       <a href="about.html">Our Story</a>
       <a href="process.html">Our Process</a>
       <a href="shop.html" class="active" aria-current="page">Shop</a>
       <a href="recognition.html">Recognition</a>
       <a href="visit.html">Visit Us</a>
+      <a href="contact.html" class="nav-contact">Contact &amp; Wholesale</a>
     </nav>
     <div class="navBtns">
+      <a href="shop.html#cart" class="cart-link" aria-label="Cart, 0 items"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7a3 3 0 016 0"/></svg><span class="cart-count" data-cart-count hidden>0</span></a>
       <a href="contact.html" class="btn btn-ghost">Contact &amp; Wholesale</a>
-      <button id="menuToggle" aria-label="Menu">&#9776;</button>
+      <button id="menuToggle" type="button" aria-expanded="false" aria-controls="navLinks" aria-label="Open menu">&#9776;</button>
     </div>
   </div>
 </header>
 
+<main id="main">
 <section class="page-hero">
-  <div class="hero-media"><img src="https://www.simpol.ph/wp-content/uploads/2025/06/tablea1-600x600.jpg" alt="Mangga't ibos served with steaming hot tsokolate at Balay Tablea" loading="eager"></div>
+  <div class="hero-media"><img width="600" height="600" src="https://www.simpol.ph/wp-content/uploads/2025/06/tablea1-600x600.jpg" alt="Mangga't ibos served with steaming hot tsokolate at Balay Tablea" fetchpriority="high"></div>
   <div class="wrap">
     <div class="crumb"><a href="index.html">Home</a> / Shop</div>
     <div class="eyebrow">Take It Home</div>
     <h1>What we make.</h1>
-    <p class="lede">Everything below is hand-made in small batches in Cabatuan — order online, pick a pack, and check out as a guest with just your name, email and number.</p>
+    <p class="lede">Everything below is hand-made in small batches in Cabatuan. Pick a pack, choose pickup or delivery, and check out as a guest with just your name, email and number.</p>
   </div>
 </section>
 
@@ -75,25 +83,50 @@
   <div class="wrap">
     <div class="eyebrow">Order Online</div>
     <h2 style="margin-bottom:1rem">Pick your box, we'll confirm the rest.</h2>
-    <p style="max-width:64ch">Add what you'd like to your cart, then check out with just your name, email and contact number — no account needed. We'll follow up to confirm payment and delivery or pickup.</p>
-    <div class="shop-layout" style="margin-top:2rem">
+    <p id="maintBanner" class="inline-notice error" role="status" hidden><strong>Online orders are paused for now.</strong> Message us on Facebook or check back soon.</p>
+    <div id="orderConfirm" hidden></div>
+    <div class="shop-toolbar">
+      <div class="chip-row" id="chipRow" role="group" aria-label="Filter by category"></div>
+      <div class="shop-tools">
+        <label class="sr-only" for="shopSearch">Search products</label>
+        <input id="shopSearch" type="search" placeholder="Search products" autocomplete="off">
+        <label class="sr-only" for="shopSort">Sort products</label>
+        <select id="shopSort"><option value="featured">Featured</option><option value="price-asc">Price: low to high</option><option value="price-desc">Price: high to low</option></select>
+      </div>
+    </div>
+    <div class="shop-layout">
       <div class="shop-grid" id="shopGrid"></div>
-      <aside class="cart-panel">
-        <h3>Your Cart</h3>
-        <div class="cart-empty" id="cartEmpty">Your cart is empty.</div>
+      <aside class="cart-panel" id="cartPanel" aria-label="Shopping cart">
+        <div class="cart-head"><h3 id="cartHeading">Your cart</h3><button type="button" class="cart-close" id="cartClose" aria-label="Close cart">&times;</button></div>
+        <p class="inline-notice" id="cartNotice" role="status" tabindex="-1" hidden></p>
+        <div class="cart-empty" id="cartEmpty">Your cart is empty. Add something tasty.</div>
         <ul class="cart-lines" id="cartLines"></ul>
-        <div class="cart-total" id="cartTotal"><span>Total</span><b>&#8369;0.00</b></div>
-        <button type="button" class="btn btn-primary" id="checkoutBtn" style="width:100%; justify-content:center" disabled>Checkout</button>
-        <p style="text-align:center; font-size:.8rem; margin-top:.75rem;"><a href="order-status.html">Already ordered? Track your order →</a></p>
-        <form id="checkoutForm" class="checkout-form">
-          <p class="checkout-note">Guest checkout — no login required.</p>
-          <div class="field"><label for="co-name">Name</label><input id="co-name" name="name" required></div>
-          <div class="field"><label for="co-email">Email</label><input id="co-email" type="email" name="email" required></div>
-          <div class="field"><label for="co-phone">Contact number</label><input id="co-phone" type="tel" name="phone" placeholder="+63 9xx xxx xxxx" required></div>
-          <div class="field"><label for="co-address">Delivery address <span style="font-weight:400; opacity:.7">(leave blank for pickup)</span></label><textarea id="co-address" name="address" placeholder="For pickup at the Cabatuan shop, leave this blank"></textarea></div>
-          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center">Place Order</button>
+        <div class="totals" aria-live="polite">
+          <div><span>Subtotal</span><span id="tSub">&#8369;0.00</span></div>
+          <div id="tShipRow"><span>Shipping</span><span id="tShip">Pickup — free</span></div>
+          <div class="grand"><span>Total</span><b id="tTotal">&#8369;0.00</b></div>
+        </div>
+        <p class="free-ship" id="freeShip" hidden></p>
+        <button type="button" class="btn btn-primary" id="checkoutBtn" style="width:100%" disabled>Checkout</button>
+        <p style="text-align:center; font-size:.85rem; margin-top:.75rem"><a href="order-status.html">Already ordered? Track your order</a></p>
+        <form id="checkoutForm" class="checkout-form" novalidate>
+          <p class="checkout-note">Guest checkout — no account needed.</p>
+          <div class="field"><label for="co-name">Name</label><input id="co-name" name="name" autocomplete="name" required></div>
+          <div class="field"><label for="co-email">Email</label><input id="co-email" type="email" name="email" autocomplete="email" required></div>
+          <div class="field"><label for="co-phone">Mobile number</label><input id="co-phone" type="tel" name="phone" inputmode="tel" autocomplete="tel" placeholder="0917 123 4567" required></div>
+          <fieldset>
+            <legend>Get it by</legend>
+            <div class="choice-grid">
+              <label class="choice"><input type="radio" name="fulfillment" value="pickup" checked><span>Pickup<small id="pickupHint">Collect at our Cabatuan shop</small></span></label>
+              <label class="choice"><input type="radio" name="fulfillment" value="delivery"><span>Delivery<small id="deliveryHint">We'll confirm the delivery fee</small></span></label>
+            </div>
+          </fieldset>
+          <div class="field" id="addressField" hidden><label for="co-address">Delivery address</label><textarea id="co-address" name="address" autocomplete="street-address" placeholder="Street, barangay, town, province"></textarea></div>
+          <fieldset id="payGroup" hidden><legend>Payment</legend><div class="choice-grid" id="payChoices"></div></fieldset>
+          <div class="honeypot" aria-hidden="true"><label>Leave this empty<input type="text" name="p_hp" tabindex="-1" autocomplete="off"></label></div>
+          <button type="submit" class="btn btn-primary" style="width:100%">Place order</button>
+          <p class="form-legal">By placing this order you agree to the <a href="terms.html">Terms</a> and <a href="privacy.html">Privacy Notice</a>.</p>
         </form>
-        <p id="orderMsg"></p>
       </aside>
     </div>
   </div>
@@ -105,20 +138,26 @@
       <div class="eyebrow">Bulk &amp; Hospitality</div>
       <h2>Wholesale for hotels, cafés &amp; resellers.</h2>
       <p>Balay Tablea already supplies cacao and tablea used in signature desserts at Richmonde Hotel Iloilo, including their Ilonggo Tiramisu and Tablea Cheesecake with Tultul. If you run a café, hotel kitchen, or pasalubong shop, we can quote recurring supply.</p>
-      <a href="contact.html" class="btn btn-primary" style="margin-top:.6rem">Start a wholesale conversation</a>
+      <a href="contact.html#wholesale" class="btn btn-primary" style="margin-top:.6rem">Start a wholesale conversation</a>
     </div>
     <figure style="margin:0">
-      <img src="https://www.simpol.ph/wp-content/uploads/2025/06/tablea-4-600x600.jpg" alt="Richmonde Hotel Iloilo's Ilonggo Tiramisu, layering local coffee and Balay Tablea cacao" loading="lazy" style="border-radius:4px">
+      <img decoding="async" width="600" height="600" src="https://www.simpol.ph/wp-content/uploads/2025/06/tablea-4-600x600.jpg" alt="Richmonde Hotel Iloilo's Ilonggo Tiramisu, layering local coffee and Balay Tablea cacao" loading="lazy" style="border-radius:4px">
       <figcaption>Richmonde Hotel Iloilo's Ilonggo Tiramisu, made with Balay Tablea cacao · Photo: Simpol.ph</figcaption>
     </figure>
   </div>
 </section>
 
+<div class="cart-backdrop" id="cartBackdrop"></div>
+<div class="cart-bar" id="cartBar"><button type="button" id="cartBarBtn"><span id="cbCount">0 items</span><span>View cart · <b id="cbTotal">&#8369;0.00</b></span></button></div>
+<dialog id="productDialog" aria-label="Product details"></dialog>
+</main>
+
 <footer>
   <div class="wrap footGrid sitemap">
-    <div class="footCol" style="max-width:240px">
-      <div class="brand brand-logo"><img src="img/logo.png" alt="Balay Tablea" width="130" height="38"></div>
+    <div class="footCol" style="max-width:260px">
+      <div class="brand brand-logo"><img src="img/logo.webp" alt="Balay Tablea" width="56" height="40" loading="lazy" decoding="async"></div>
       <p style="margin-top:.6rem; font-size:.88rem">Rizal Street, Cabatuan, Iloilo, Philippines — authorized manufacturer &amp; distributor of Tan Tono Tablea, Cabatuan's official OTOP cacao product.</p>
+      <p style="margin-top:.6rem; font-size:.88rem"><span data-setting="operating_hours">Open daily, 8:00 AM – 6:00 PM</span><br><a href="tel:+639285245579" data-setting="contact_phone" data-setting-href="tel">+63 928 524 5579</a></p>
     </div>
     <div class="footCol">
       <h4>Explore</h4>
@@ -135,26 +174,29 @@
         <li><a href="visit.html">Plan a Visit</a></li>
         <li><a href="order-status.html">Track Order</a></li>
         <li><a href="contact.html">Contact &amp; Wholesale</a></li>
-        <li><a href="https://www.facebook.com/products.balaytablea/">Message on Facebook</a></li>
+        <li><a href="https://www.facebook.com/products.balaytablea/" rel="noopener">Message on Facebook</a></li>
       </ul>
     </div>
     <div class="footCol">
       <h4>Recognized by</h4>
-      <ul style="font-size:.85rem; opacity:.85">
+      <ul style="font-size:.85rem">
         <li>Cabatuan LGU — OTOP Commodity</li>
         <li>DOST Region VI — SETUP</li>
         <li>UNESCO Cities of Gastronomy Expo</li>
       </ul>
     </div>
   </div>
-  <div class="wrap" style="margin-top:1.8rem; padding-top:1.5rem; border-top:1px solid var(--line); font-size:.82rem; opacity:.7">
-    &copy; 2026 Sunburst's Balay Tablea. Heritage chocolate, hand-made in Cabatuan, Iloilo.
+  <div class="wrap foot-legal">
+    <span>&copy; 2026 Sunburst's Balay Tablea. Heritage chocolate, hand-made in Cabatuan, Iloilo.</span>
+    <span><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></span>
   </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/supabase-client.js"></script>
-<script src="js/main.js"></script>
-<script src="js/shop.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script defer src="js/ui.js"></script>
+<script defer src="js/cart.js"></script>
+<script defer src="js/supabase-client.js"></script>
+<script defer src="js/main.js"></script>
+<script defer src="js/shop.js"></script>
 </body>
 </html>

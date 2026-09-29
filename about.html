@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F172A">
 <title>Our Story — Balay Tablea</title>
 <meta name="description" content="How teacher-turned-founder Catherine Taleon revived Cabatuan's cacao tradition in 2012, and the farming families who supply it today.">
 <link rel="canonical" href="https://balaytablea.netlify.app/about.html">
@@ -10,8 +11,11 @@
 <meta property="og:description" content="How teacher-turned-founder Catherine Taleon revived Cabatuan's cacao tradition in 2012, and the farming families who supply it today.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://balaytablea.netlify.app/about.html">
-<meta property="og:image" content="https://www.simpol.ph/wp-content/uploads/2025/06/tablea-e1751111622159.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image" content="https://balaytablea.netlify.app/img/og-default.jpg">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://balaytablea.netlify.app/img/og-default.jpg">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8D%AB%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,7 +29,7 @@
   "alternateName": "Balay Tablea",
   "url": "https://balaytablea.netlify.app/about.html",
   "description": "Stone-ground heritage tablea chocolate hand-made in Cabatuan, Iloilo, Philippines, wrapped in banana leaf.",
-  "image": "https://www.simpol.ph/wp-content/uploads/2025/06/tablea-e1751111622159.jpg",
+  "image": "https://balaytablea.netlify.app/img/og-default.jpg",
   "address": {
     "@type": "PostalAddress",
     "streetAddress": "Rizal Street",
@@ -41,28 +45,32 @@
 </script>
 </head>
 <body>
-<div id="announceBar"></div>
+<a class="skip" href="#main">Skip to content</a>
+<div id="announceBar" role="region" aria-label="Announcement"></div>
 
 <header>
   <div class="wrap nav">
-    <a href="index.html" class="brand brand-logo" style="text-decoration:none"><img src="img/logo.png" alt="Balay Tablea" width="150" height="44"><span class="brand-wordmark">BALAY TABLEA</span></a>
-    <nav class="links" id="navLinks">
+    <a href="index.html" class="brand brand-logo" style="text-decoration:none"><img src="img/logo.webp" alt="" width="56" height="40"><span class="brand-wordmark">BALAY TABLEA</span></a>
+    <nav class="links" id="navLinks" aria-label="Main">
       <a href="index.html">Home</a>
       <a href="about.html" class="active" aria-current="page">Our Story</a>
       <a href="process.html">Our Process</a>
       <a href="shop.html">Shop</a>
       <a href="recognition.html">Recognition</a>
       <a href="visit.html">Visit Us</a>
+      <a href="contact.html" class="nav-contact">Contact &amp; Wholesale</a>
     </nav>
     <div class="navBtns">
+      <a href="shop.html#cart" class="cart-link" aria-label="Cart, 0 items"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7a3 3 0 016 0"/></svg><span class="cart-count" data-cart-count hidden>0</span></a>
       <a href="contact.html" class="btn btn-ghost">Contact &amp; Wholesale</a>
-      <button id="menuToggle" aria-label="Menu">&#9776;</button>
+      <button id="menuToggle" type="button" aria-expanded="false" aria-controls="navLinks" aria-label="Open menu">&#9776;</button>
     </div>
   </div>
 </header>
 
+<main id="main">
 <section class="page-hero">
-  <div class="hero-media"><img src="https://www.simpol.ph/wp-content/uploads/2025/06/tablea-10-600x600.jpg" alt="Cacao pods in varying shades of yellow, orange and red, harvested in the highlands of Iloilo" loading="eager"></div>
+  <div class="hero-media"><img width="600" height="600" src="https://www.simpol.ph/wp-content/uploads/2025/06/tablea-10-600x600.jpg" alt="Cacao pods in varying shades of yellow, orange and red, harvested in the highlands of Iloilo" fetchpriority="high"></div>
   <div class="wrap">
     <div class="crumb"><a href="index.html">Home</a> / Our Story</div>
     <div class="eyebrow">Our Story</div>
@@ -74,7 +82,7 @@
 <section>
   <div class="wrap founderGrid">
     <figure class="story-img">
-      <img src="https://region6.dost.gov.ph/wp-content/uploads/2024/05/26952294_727671524109433_7214231218259448229_o-768x512-1.jpg" alt="Catherine Taleon presenting Balay Tablea's chocolate to DOST Secretary Fortunato dela Peña during a project visit to Cabatuan" loading="lazy">
+      <img decoding="async" width="768" height="512" src="https://region6.dost.gov.ph/wp-content/uploads/2024/05/26952294_727671524109433_7214231218259448229_o-768x512-1.jpg" alt="Catherine Taleon presenting Balay Tablea's chocolate to DOST Secretary Fortunato dela Peña during a project visit to Cabatuan" loading="lazy">
       <figcaption>Owner Catherine Taleon presents Balay Tablea's chocolate to DOST Secretary Fortunato dela Peña, 2018 · Photo: DOST Region VI</figcaption>
     </figure>
     <div>
@@ -128,12 +136,14 @@
     <a href="process.html" class="btn btn-primary" style="margin-top:1.2rem">Walk through our process</a>
   </div>
 </section>
+</main>
 
 <footer>
   <div class="wrap footGrid sitemap">
-    <div class="footCol" style="max-width:240px">
-      <div class="brand brand-logo"><img src="img/logo.png" alt="Balay Tablea" width="130" height="38"></div>
+    <div class="footCol" style="max-width:260px">
+      <div class="brand brand-logo"><img src="img/logo.webp" alt="Balay Tablea" width="56" height="40" loading="lazy" decoding="async"></div>
       <p style="margin-top:.6rem; font-size:.88rem">Rizal Street, Cabatuan, Iloilo, Philippines — authorized manufacturer &amp; distributor of Tan Tono Tablea, Cabatuan's official OTOP cacao product.</p>
+      <p style="margin-top:.6rem; font-size:.88rem"><span data-setting="operating_hours">Open daily, 8:00 AM – 6:00 PM</span><br><a href="tel:+639285245579" data-setting="contact_phone" data-setting-href="tel">+63 928 524 5579</a></p>
     </div>
     <div class="footCol">
       <h4>Explore</h4>
@@ -150,25 +160,27 @@
         <li><a href="visit.html">Plan a Visit</a></li>
         <li><a href="order-status.html">Track Order</a></li>
         <li><a href="contact.html">Contact &amp; Wholesale</a></li>
-        <li><a href="https://www.facebook.com/products.balaytablea/">Message on Facebook</a></li>
+        <li><a href="https://www.facebook.com/products.balaytablea/" rel="noopener">Message on Facebook</a></li>
       </ul>
     </div>
     <div class="footCol">
       <h4>Recognized by</h4>
-      <ul style="font-size:.85rem; opacity:.85">
+      <ul style="font-size:.85rem">
         <li>Cabatuan LGU — OTOP Commodity</li>
         <li>DOST Region VI — SETUP</li>
         <li>UNESCO Cities of Gastronomy Expo</li>
       </ul>
     </div>
   </div>
-  <div class="wrap" style="margin-top:1.8rem; padding-top:1.5rem; border-top:1px solid var(--line); font-size:.82rem; opacity:.7">
-    &copy; 2026 Sunburst's Balay Tablea. Heritage chocolate, hand-made in Cabatuan, Iloilo.
+  <div class="wrap foot-legal">
+    <span>&copy; 2026 Sunburst's Balay Tablea. Heritage chocolate, hand-made in Cabatuan, Iloilo.</span>
+    <span><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></span>
   </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="js/supabase-client.js"></script>
-<script src="js/main.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script defer src="js/ui.js"></script>
+<script defer src="js/supabase-client.js"></script>
+<script defer src="js/main.js"></script>
 </body>
 </html>

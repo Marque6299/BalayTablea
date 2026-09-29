@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /admin.html
+Disallow: /admin/
+Disallow: /order-status.html
 
 Sitemap: https://balaytablea.netlify.app/sitemap.xml

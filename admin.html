@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow">
   <title>Balay Tablea — Admin Operating System</title>
 
   <!-- Google Fonts & Font Awesome Icons -->
@@ -20,11 +21,12 @@
       --bg-surface: #1e293b;
       --bg-surface-elevated: #334155;
       --border-color: rgba(255, 255, 255, 0.1);
-      --accent: #d97706; /* Tablea Warm Amber */
-      --accent-hover: #b45309;
+      --accent: #b45309; /* AA-safe on white text: 5.02:1 (the old #d97706 was 3.19:1, fails WCAG AA) */
+      --accent-hover: #92400e;
       --text-main: #f8fafc;
-      --text-muted: #94a3b8;
+      --text-muted: #a9b7c9; /* 7.18:1 on --bg-surface (the old #94a3b8 was 4.2:1, borderline for small text) */
       --danger: #ef4444;
+      --danger-text: #f87171; /* use for text on dark surfaces: 5.29:1 vs #ef4444's 3.89:1 */
       --success: #10b981;
       --warning: #f59e0b;
       --radius: 12px;
@@ -75,7 +77,7 @@
     }
 
     .toast.toast-success { border-left-color: var(--success); }
-    .toast.toast-error { border-left-color: var(--danger); }
+    .toast.toast-error { border-left-color: var(--danger-text); }
 
     @keyframes slideIn {
       from { transform: translateX(100%); opacity: 0; }
@@ -267,7 +269,13 @@
     .btn-primary:hover { background: var(--accent-hover); }
     .btn-secondary { background: var(--bg-surface-elevated); color: var(--text-main); }
     .btn-secondary:hover { background: #475569; }
-    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger { background: #dc2626; color: #fff; } /* white on --danger is 3.76:1, fails AA; #dc2626 gives 4.83:1 */
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-primary:disabled, .btn-secondary:disabled, .btn-danger:disabled { opacity: .55; cursor: not-allowed; }
+    .thumb-40 { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; }
+    .thumb-fallback { background: var(--bg-surface-elevated); display: flex; align-items: center; justify-content: center; font-size: .75rem; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .nav-item:focus-visible { outline-offset: -2px; }
     .btn-sm { padding: 0.375rem 0.625rem; font-size: 0.8125rem; }
 
     /* --- CARDS & TABLES --- */
@@ -323,7 +331,7 @@
 
     .badge-active, .badge-completed, .badge-approved, .badge-shipped { background: rgba(16, 185, 129, 0.15); color: var(--success); }
     .badge-pending, .badge-processing { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
-    .badge-draft, .badge-cancelled, .badge-declined, .badge-archived { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+    .badge-draft, .badge-cancelled, .badge-declined, .badge-archived { background: rgba(239, 68, 68, 0.15); color: var(--danger-text); }
 
     /* --- MODALS --- */
     .modal-backdrop {
@@ -375,7 +383,7 @@
     .kpi-card .kpi-value { font-size: 1.85rem; font-weight: 700; }
     .kpi-card .kpi-sub { font-size: .78rem; color: var(--text-muted); margin-top: .25rem; }
     .kpi-card.warn .kpi-value { color: var(--warning); }
-    .kpi-card.danger .kpi-value { color: var(--danger); }
+    .kpi-card.danger .kpi-value { color: var(--danger-text); }
     .kpi-card.good .kpi-value { color: var(--success); }
 
     .dash-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 1.5rem; align-items: start; }
@@ -438,7 +446,7 @@
     .badge-owner, .badge-admin { background: rgba(217, 119, 6, 0.18); color: var(--accent); }
     .badge-manager { background: rgba(16, 185, 129, 0.15); color: var(--success); }
     .badge-staff, .badge-invited, .badge-new { background: rgba(148, 163, 184, 0.18); color: var(--text-muted); }
-    .badge-suspended, .badge-declined2 { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+    .badge-suspended, .badge-declined2 { background: rgba(239, 68, 68, 0.15); color: var(--danger-text); }
     .badge-in_progress { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
     .badge-resolved { background: rgba(16, 185, 129, 0.15); color: var(--success); }
   </style>
@@ -1062,6 +1070,63 @@
       });
     }
 
+    // FE-A-02 (A6): PostgREST's .or() filter string treats , ( ) * and % as
+    // syntax, so raw user search text could change or break the filter.
+    // Strip everything except letters, numbers, spaces and a few safe
+    // punctuation marks before it goes anywhere near a filter string.
+    function sanitizeSearchTerm(str) {
+      return String(str || '').replace(/[,()%*]/g, '').trim().slice(0, 100);
+    }
+
+    // FE-A-02 (A5): every list row used to build onclick="fn('${id}','${escapeHTML(name)}')"
+    // strings. escapeHTML turns ' into &#39;, which the HTML parser turns back
+    // into ' inside an attribute — so a name containing an apostrophe (e.g.
+    // "Nanay's Tablea") broke the onclick, and a crafted name could inject
+    // script. Rows now carry data-* attributes instead, read by one delegated
+    // listener per table (see "delegated row actions" below), so no value is
+    // ever concatenated into HTML as code.
+    function h(strings, ...values) {
+      return strings.reduce((out, s, i) => out + s + (i < values.length ? escapeHTML(values[i]) : ''), '');
+    }
+
+    // FE-A-01 (A24): modals had no focus trap, no Esc-to-close and no
+    // backdrop click — keyboard and screen-reader users could tab out into
+    // the page behind them. This is generic across all five .modal-backdrop
+    // dialogs, so it's handled once here instead of per modal.
+    let modalReturnFocus = null;
+    function activeModal() { return document.querySelector('.modal-backdrop.active'); }
+    function trapModalTab(e) {
+      const modal = activeModal(); if (!modal || e.key !== 'Tab') return;
+      const items = [...modal.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')].filter(el => el.offsetParent !== null);
+      if (!items.length) return;
+      const first = items[0], last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+    document.addEventListener('keydown', (e) => {
+      const modal = activeModal();
+      if (!modal) return;
+      if (e.key === 'Escape') { e.preventDefault(); closeAnyModal(modal); }
+      else trapModalTab(e);
+    });
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+      backdrop.setAttribute('role', 'dialog');
+      backdrop.setAttribute('aria-modal', 'true');
+      backdrop.addEventListener('mousedown', (e) => { if (e.target === backdrop) closeAnyModal(backdrop); });
+    });
+    function closeAnyModal(backdrop) {
+      backdrop.classList.remove('active');
+      if (modalReturnFocus && document.body.contains(modalReturnFocus)) modalReturnFocus.focus();
+      modalReturnFocus = null;
+    }
+    // Call right after `<id>.classList.add('active')` wherever a modal opens,
+    // so Esc/backdrop-click can return focus to whatever triggered it.
+    function focusModal(backdrop) {
+      modalReturnFocus = document.activeElement;
+      const first = backdrop.querySelector('input,select,textarea,button');
+      if (first) first.focus();
+    }
+
     function formatPHP(amount) {
       return '₱' + parseFloat(amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
@@ -1111,6 +1176,11 @@
       }
     }
 
+    // FE-A-01 fix (A13): onAuthStateChange AND the post-login getSession() call
+    // could both reach here for the same sign-in, restarting the heartbeat
+    // interval and re-running setupSessionCard/switchTab every time. Skip the
+    // repeat work when it's the same already-signed-in user.
+    let lastHandledUserId = null;
     async function onSignedIn(session) {
       // No recorded login time (e.g. very first run after this feature
       // shipped) — treat this moment as the start of the 24h window.
@@ -1123,8 +1193,11 @@
         return;
       }
 
+      const already = lastHandledUserId === session.user.id && !!heartbeatTimer;
       CURRENT_SESSION = session;
       authOverlay.style.display = 'none';
+      if (already) return; // same session already initialized — just refreshed the token
+      lastHandledUserId = session.user.id;
       await setupSessionCard(session);
       startHeartbeat();
       switchTab('dashboard', document.querySelector('.nav-item'));
@@ -1132,20 +1205,27 @@
 
     function onSignedOut() {
       CURRENT_SESSION = null;
+      lastHandledUserId = null;
       authOverlay.style.display = 'flex';
-      if (heartbeatTimer) clearInterval(heartbeatTimer);
+      if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
       document.getElementById('session-card').style.display = 'none';
     }
 
     async function initApp() {
-      // Listen for auth changes dynamically
+      // Single source of truth for auth state (fixes A13): onAuthStateChange
+      // fires once on subscribe with whatever session already exists, and
+      // again on every future sign-in/out, so a separate getSession() call
+      // here would just duplicate the very first event.
       db.auth.onAuthStateChange((event, session) => {
         if (session) onSignedIn(session); else onSignedOut();
       });
-
+      // Once for the very first paint, in case the SDK's initial event fires late.
       const { data: { session } } = await db.auth.getSession();
       if (session) onSignedIn(session); else onSignedOut();
     }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && CURRENT_SESSION) heartbeat();
+    });
 
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1166,7 +1246,8 @@
       } else {
         markLoginNow(); // a real, fresh sign-in — this starts the 24h clock
         showToast('Signed in successfully', 'success');
-        await onSignedIn(data.session);
+        // onAuthStateChange (above) fires SIGNED_IN from this call and handles
+        // the rest — calling onSignedIn again here would double-run it (A13).
       }
     });
 
@@ -1227,18 +1308,17 @@
     }
 
     function startHeartbeat() {
+      // visibilitychange is handled once, globally, next to initApp (A13) —
+      // registering it again here on every sign-in used to stack listeners.
       heartbeat();
       if (heartbeatTimer) clearInterval(heartbeatTimer);
       heartbeatTimer = setInterval(heartbeat, 45000);
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') heartbeat();
-      });
     }
 
     // 5. PRODUCTS MODULE
     async function loadProducts() {
       const tbody = document.getElementById('products-tbody');
-      const search = document.getElementById('product-search').value.trim();
+      const search = sanitizeSearchTerm(document.getElementById('product-search').value);
 
       let query = db.from('products').select('*').order('created_at', { ascending: false });
       if (search) {
@@ -1248,7 +1328,7 @@
       const { data, error } = await query;
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="7" style="color:var(--danger)">Error: ${escapeHTML(error.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="color: var(--danger-text)">Error: ${escapeHTML(error.message)}</td></tr>`;
         return;
       }
 
@@ -1257,39 +1337,54 @@
         return;
       }
 
+      // FE-A-02 (A5): row actions now carry id/name as data-* attributes,
+      // read by the delegated listener below, instead of being concatenated
+      // into an onclick="..." string (escapeHTML() doesn't make that safe —
+      // see the sanitizeSearchTerm()/h`` comment above).
       tbody.innerHTML = data.map(p => `
         <tr>
           <td>
             ${p.image_url 
-              ? `<img src="${escapeHTML(p.image_url)}" style="width:40px; height:40px; object-fit:cover; border-radius:6px;" onerror="this.src='https://via.placeholder.com/40?text=BT'" />` 
-              : `<div style="width:40px; height:40px; background:var(--bg-surface-elevated); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:0.75rem;"><i class="fa-solid fa-image"></i></div>`}
+              ? `<img src="${escapeHTML(p.image_url)}" class="thumb-40" data-fallback-icon />` 
+              : `<div class="thumb-40 thumb-fallback"><i class="fa-solid fa-image"></i></div>`}
           </td>
           <td><strong>${escapeHTML(p.name)}</strong></td>
           <td>${escapeHTML(p.category) || '-'}</td>
           <td>${formatPHP(p.unit_price)}</td>
           <td>
             ${p.stock_quantity <= p.low_stock_threshold 
-              ? `<span style="color:var(--danger); font-weight:700;"><i class="fa-solid fa-triangle-exclamation"></i> ${p.stock_quantity}</span>` 
+              ? `<span style="color: var(--danger-text); font-weight:700;"><i class="fa-solid fa-triangle-exclamation"></i> ${p.stock_quantity}</span>` 
               : p.stock_quantity}
           </td>
-          <td><span class="badge badge-${p.status}">${p.status}</span></td>
+          <td><span class="badge badge-${escapeHTML(p.status)}">${escapeHTML(p.status)}</span></td>
           <td>
-            <button class="btn btn-secondary btn-sm" onclick="editProduct('${p.id}')">
+            <button class="btn btn-secondary btn-sm" data-action="edit-product" data-id="${escapeHTML(p.id)}">
               <i class="fa-solid fa-pen"></i> Edit
             </button>
-            <button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}', '${escapeHTML(p.name)}')">
+            <button class="btn btn-danger btn-sm" data-action="delete-product" data-id="${escapeHTML(p.id)}" data-name="${escapeHTML(p.name)}">
               <i class="fa-solid fa-trash"></i>
             </button>
           </td>
         </tr>
       `).join('');
+      tbody.querySelectorAll('img[data-fallback-icon]').forEach(img => {
+        img.addEventListener('error', () => {
+          img.replaceWith(Object.assign(document.createElement('div'), { className: 'thumb-40 thumb-fallback', innerHTML: '<i class="fa-solid fa-image"></i>' }));
+        }, { once: true });
+      });
     }
+    document.getElementById('products-tbody').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]'); if (!btn) return;
+      if (btn.dataset.action === 'edit-product') editProduct(btn.dataset.id);
+      if (btn.dataset.action === 'delete-product') deleteProduct(btn.dataset.id, btn.dataset.name);
+    });
 
     function openProductModal() {
       document.getElementById('product-form').reset();
       document.getElementById('prod-id').value = '';
       document.getElementById('modal-product-title').innerText = 'Add New Product';
       document.getElementById('product-modal').classList.add('active');
+      focusModal(document.getElementById('product-modal'));
     }
 
     function closeProductModal() {
@@ -1344,6 +1439,7 @@
 
       document.getElementById('modal-product-title').innerText = 'Edit Product';
       document.getElementById('product-modal').classList.add('active');
+      focusModal(document.getElementById('product-modal'));
     }
 
     async function deleteProduct(id, name) {
@@ -1366,7 +1462,7 @@
         .order('created_at', { ascending: false });
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="5" style="color:var(--danger)">Error: ${escapeHTML(error.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="color: var(--danger-text)">Error: ${escapeHTML(error.message)}</td></tr>`;
         return;
       }
 
@@ -1398,6 +1494,7 @@
 
       document.getElementById('log-form').reset();
       document.getElementById('log-modal').classList.add('active');
+      focusModal(document.getElementById('log-modal'));
     }
 
     function closeLogModal() {
@@ -1439,17 +1536,17 @@
     // 7. ORDERS MODULE
     async function loadOrders() {
       const tbody = document.getElementById('orders-tbody');
-      const search = document.getElementById('order-search').value.trim();
+      const search = sanitizeSearchTerm(document.getElementById('order-search').value);
 
       let query = db.from('orders').select('*').order('created_at', { ascending: false });
       if (search) {
-        query = query.or(`customer_name.ilike.%${search}%,order_number.ilike.%${search}%,customer_email.ilike.%${search}%`);
+        query = query.or(`customer_name.ilike.%${search}%,order_number.ilike.%${search}%,customer_email.ilike.%${search}%`); // search is pre-sanitized by sanitizeSearchTerm() above (A6)
       }
 
       const { data, error } = await query;
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="6" style="color:var(--danger)">Error: ${escapeHTML(error.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="color: var(--danger-text)">Error: ${escapeHTML(error.message)}</td></tr>`;
         return;
       }
 
@@ -1470,12 +1567,12 @@
           <td>${new Date(o.created_at).toLocaleDateString('en-PH')}</td>
           <td>
             <div style="display:flex; gap:0.5rem; align-items:center;">
-              <select class="form-control" style="padding:0.25rem 0.5rem; font-size:0.8125rem;" onchange="updateOrderStatus('${o.id}', this.value)">
+              <select class="form-control order-status-select" style="padding:0.25rem 0.5rem; font-size:0.8125rem;" data-id="${escapeHTML(o.id)}">
                 ${['pending','processing','shipped','completed','cancelled'].map(s => 
                   `<option value="${s}" ${o.status === s ? 'selected' : ''}>${s}</option>`
                 ).join('')}
               </select>
-              <button class="btn btn-secondary btn-sm" onclick="viewOrderItems('${o.id}', '${escapeHTML(o.order_number)}')">
+              <button class="btn btn-secondary btn-sm" data-action="view-order" data-id="${escapeHTML(o.id)}" data-order-number="${escapeHTML(o.order_number)}">
                 <i class="fa-solid fa-eye"></i>
               </button>
             </div>
@@ -1483,6 +1580,14 @@
         </tr>
       `).join('');
     }
+    document.getElementById('orders-tbody').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action="view-order"]'); if (!btn) return;
+      viewOrderItems(btn.dataset.id, btn.dataset.orderNumber);
+    });
+    document.getElementById('orders-tbody').addEventListener('change', (e) => {
+      const sel = e.target.closest('.order-status-select'); if (!sel) return;
+      updateOrderStatus(sel.dataset.id, sel.value);
+    });
 
     async function updateOrderStatus(orderId, status) {
       const { error } = await db.from('orders').update({ status }).eq('id', orderId);
@@ -1520,6 +1625,7 @@
       }
 
       document.getElementById('order-modal').classList.add('active');
+      focusModal(document.getElementById('order-modal'));
     }
 
     function closeOrderModal() {
@@ -1532,7 +1638,7 @@
       const { data, error } = await db.from('visit_bookings').select('*').order('visit_date', { ascending: true });
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="6" style="color:var(--danger)">Error: ${escapeHTML(error.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="color: var(--danger-text)">Error: ${escapeHTML(error.message)}</td></tr>`;
         return;
       }
 
@@ -1703,16 +1809,16 @@
     let activeMessageId = null;
     async function loadMessages() {
       const tbody = document.getElementById('messages-tbody');
-      const search = document.getElementById('message-search').value.trim();
+      const search = sanitizeSearchTerm(document.getElementById('message-search').value);
 
       let query = db.from('inquiries').select('*').order('created_at', { ascending: false });
       if (search) {
-        query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,message.ilike.%${search}%`);
+        query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,message.ilike.%${search}%`); // search is pre-sanitized by sanitizeSearchTerm() above (A6)
       }
       const { data, error } = await query;
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="6" style="color:var(--danger)">Error: ${escapeHTML(error.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="color: var(--danger-text)">Error: ${escapeHTML(error.message)}</td></tr>`;
         return;
       }
       if (!data || data.length === 0) {
@@ -1749,6 +1855,7 @@
       `;
       document.getElementById('message-status-select').value = data.status;
       document.getElementById('message-modal').classList.add('active');
+      focusModal(document.getElementById('message-modal'));
     }
 
     function closeMessageModal() {
@@ -1772,7 +1879,7 @@
       const { data, error } = await db.from('staff').select('*').order('created_at', { ascending: false });
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="6" style="color:var(--danger)">Error: ${escapeHTML(error.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="color: var(--danger-text)">Error: ${escapeHTML(error.message)}</td></tr>`;
         return;
       }
       if (!data || data.length === 0) {
@@ -1804,6 +1911,7 @@
       document.getElementById('staff-form').reset();
       document.getElementById('staff-result').innerHTML = '';
       document.getElementById('staff-modal').classList.add('active');
+      focusModal(document.getElementById('staff-modal'));
     }
 
     function closeStaffModal() {
