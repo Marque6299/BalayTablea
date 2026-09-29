@@ -243,6 +243,9 @@ async function handleLogout() {
 
 // 4. TAB SWITCHING SYSTEM
 function switchTab(tabKey, element) {
+  if (tabKey === 'registration' && !canRegister()) {   // UI guard only; server enforces
+    tabKey = 'dashboard'; element = document.querySelector('.nav-item[data-tab="dashboard"]');
+  }
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
 
@@ -257,6 +260,7 @@ function switchTab(tabKey, element) {
   if (tabKey === 'bookings') loadBookings();
   if (tabKey === 'messages') loadMessages();
   if (tabKey === 'staff') loadStaff();
+  if (tabKey === 'registration') initRegistrationForm();
   if (tabKey === 'settings') loadSettings();
 }
 
@@ -271,7 +275,7 @@ function toggleSidebar(force) {
 // 5. SESSION / "CURRENTLY SIGNED IN" + PRESENCE HEARTBEAT
 async function setupSessionCard(session) {
   const user = session.user;
-  const { data: staffRow } = await db.from('staff').select('*').eq('auth_user_id', user.id).maybeSingle();
+  const { data: staffRow } = await db.from('staff').select('full_name,role,status').eq('auth_user_id', user.id).maybeSingle();
 
   const label = (staffRow && staffRow.full_name) || user.email;
   const initials = label.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
@@ -279,7 +283,9 @@ async function setupSessionCard(session) {
   document.getElementById('session-card').style.display = 'flex';
   document.getElementById('session-avatar').innerHTML = `${escapeHTML(initials)}<span class="presence-dot online"></span>`;
   document.getElementById('session-email').textContent = label;
-  document.getElementById('session-role').textContent = (staffRow && staffRow.role) || 'admin';
+  document.getElementById('session-role').textContent = (staffRow && staffRow.role) || 'no role';
+  CURRENT_ROLE = (staffRow && staffRow.status !== 'suspended' && ROLE_RANK[staffRow.role]) ? staffRow.role : null;
+  applyRoleUI();
 }
 
 async function heartbeat() {
@@ -299,33 +305,116 @@ function startHeartbeat() {
   heartbeatTimer = setInterval(heartbeat, 45000);
 }
 
-// 5. PRODUCTS MODULE
-async function loadProducts() {
-  const tbody = document.getElementById('products-tbody');
-  const search = sanitizeSearchTerm(document.getElementById('product-search').value);
+// ---------------------------------------------------------------------------
+// v5 PAGINATION — 10 rows per page. Only the ACTIVE page is requested
+// (.range + exact count in the same call). Other pages are never prefetched,
+// and a tab only fetches when it is opened (switchTab).
+// ---------------------------------------------------------------------------
+const PAGE_SIZE = 10;
+const pagerState = {};
+let PRODUCT_HAS_CHANNEL = true;
 
-  let query = db.from('products').select('*').order('created_at', { ascending: false });
-  if (search) {
-    query = query.ilike('name', `%${search}%`);
-  }
-
-  const { data, error } = await query;
-
+async function pagedLoad(key, cfg, retried) {
+  const st = pagerState[key] || (pagerState[key] = { page: 1, total: 0, req: 0 });
+  if (cfg.reset) st.page = 1;
+  const my = ++st.req;
+  const tbody = document.getElementById(cfg.tbody);
+  tbody.style.opacity = '.55';
+  const from = (st.page - 1) * PAGE_SIZE;
+  const q = cfg.build(db.from(cfg.table).select(cfg.columns, { count: 'exact' })).range(from, from + PAGE_SIZE - 1);
+  const { data, error, count } = await q;
+  if (my !== st.req) return;                       // a newer request superseded this one
+  tbody.style.opacity = '';
   if (error) {
-    tbody.innerHTML = `<tr><td colspan="7" style="color: var(--danger-text)">Error: ${escapeHTML(error.message)}</td></tr>`;
+    if (!retried && cfg.fallbackColumns && cfg.fallbackMatch && cfg.fallbackMatch.test(error.message || '')) {
+      if (cfg.onFallback) cfg.onFallback();
+      return pagedLoad(key, { ...cfg, columns: cfg.fallbackColumns, fallbackColumns: null, reset: false }, true);
+    }
+    if (error.code === 'PGRST103' && st.page > 1) { st.page = 1; return pagedLoad(key, { ...cfg, reset: false }, true); } // page beyond range
+    tbody.innerHTML = `<tr><td colspan="${cfg.colspan}" style="color: var(--danger-text)">Error: ${escapeHTML(error.message)}</td></tr>`;
+    renderPager(key, 0, 0, 0);
     return;
   }
-
+  st.total = count || 0;
+  const pages = Math.max(1, Math.ceil(st.total / PAGE_SIZE));
+  if (st.page > pages) { st.page = pages; return pagedLoad(key, { ...cfg, reset: false }, true); } // e.g. last row deleted
   if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center;">No products found.</td></tr>`;
-    return;
+    tbody.innerHTML = `<tr><td colspan="${cfg.colspan}" style="text-align:center;">${cfg.empty}</td></tr>`;
+  } else {
+    tbody.innerHTML = data.map(cfg.row).join('');
+    if (cfg.after) cfg.after(tbody, data);
   }
+  renderPager(key, pages, from, data ? data.length : 0);
+}
 
-  // FE-A-02 (A5): row actions now carry id/name as data-* attributes,
-  // read by the delegated listener below, instead of being concatenated
-  // into an onclick="..." string (escapeHTML() doesn't make that safe —
-  // see the sanitizeSearchTerm()/h`` comment above).
-  tbody.innerHTML = data.map(p => `
+function pageWindow(cur, pages) {
+  const set = new Set([1, pages, cur - 1, cur, cur + 1]);
+  const list = [...set].filter(n => n >= 1 && n <= pages).sort((a, b) => a - b);
+  const out = []; let prev = 0;
+  for (const n of list) { if (n - prev > 1) out.push('gap'); out.push(n); prev = n; }
+  return out;
+}
+
+function renderPager(key, pages, from, shown) {
+  const el = document.getElementById(`pager-${key}`); if (!el) return;
+  const st = pagerState[key];
+  if (!st || !st.total) { el.innerHTML = ''; return; }
+  const btns = pageWindow(st.page, pages).map(n => n === 'gap'
+    ? '<span class="pager-gap" aria-hidden="true">…</span>'
+    : `<button type="button" class="pager-btn" data-page="${n}" ${n === st.page ? 'aria-current="page"' : ''} aria-label="Page ${n}">${n}</button>`).join('');
+  el.innerHTML = `
+    <span class="pager-info">Showing ${from + 1}–${from + shown} of ${st.total}</span>
+    <nav class="pager-btns" aria-label="Pagination">
+      <button type="button" class="pager-btn" data-page="prev" aria-label="Previous page" ${st.page <= 1 ? 'disabled' : ''}><i class="fa-solid fa-chevron-left"></i></button>
+      ${btns}
+      <button type="button" class="pager-btn" data-page="next" aria-label="Next page" ${st.page >= pages ? 'disabled' : ''}><i class="fa-solid fa-chevron-right"></i></button>
+    </nav>`;
+}
+
+const PAGER_RELOAD = {
+  products: () => loadProducts(), inventory: () => loadInventoryLogs(), orders: () => loadOrders(),
+  bookings: () => loadBookings(), messages: () => loadMessages(), staff: () => loadStaff()
+};
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('.pager-btn[data-page]'); if (!b || b.disabled) return;
+  const key = b.closest('.pager').id.replace('pager-', '');
+  const st = pagerState[key]; if (!st) return;
+  const pages = Math.max(1, Math.ceil(st.total / PAGE_SIZE));
+  const v = b.dataset.page;
+  st.page = v === 'prev' ? Math.max(1, st.page - 1) : v === 'next' ? Math.min(pages, st.page + 1) : Number(v);
+  if (PAGER_RELOAD[key]) PAGER_RELOAD[key]();
+});
+
+// ---- role model (mirrors public.has_role hierarchy; server enforces it too) ----
+const ROLE_RANK = { staff: 1, manager: 2, admin: 3, owner: 4 };
+let CURRENT_ROLE = null;                      // least privilege until proven otherwise
+const canRegister = () => CURRENT_ROLE === 'owner' || CURRENT_ROLE === 'manager';
+const allowedRoles = () => Object.keys(ROLE_RANK).filter(r => ROLE_RANK[r] < (ROLE_RANK[CURRENT_ROLE] || 0)).sort((a, b) => ROLE_RANK[b] - ROLE_RANK[a]);
+const canManageRole = (targetRole) => (ROLE_RANK[CURRENT_ROLE] || 0) > (ROLE_RANK[targetRole] || 99);
+
+function applyRoleUI() {
+  const nav = document.querySelector('.nav-item[data-tab="registration"]');
+  if (nav) nav.classList.toggle('is-hidden', !canRegister());
+  const sel = document.getElementById('reg-role');
+  if (sel) {
+    const labels = { admin: 'Admin (full access)', manager: 'Manager (orders, inventory, bookings)', staff: 'Staff' };
+    const roles = allowedRoles();
+    sel.innerHTML = roles.map(r => `<option value="${r}">${labels[r]}</option>`).join('');
+    sel.value = roles.includes('staff') ? 'staff' : (roles[0] || '');
+    sel.disabled = roles.length <= 1;
+  }
+}
+
+// 5. PRODUCTS MODULE
+async function loadProducts(reset) {
+  const search = sanitizeSearchTerm(document.getElementById('product-search').value);
+  const base = 'id,name,image_url,category,unit_price,stock_quantity,low_stock_threshold,status';
+  return pagedLoad('products', {
+    reset, table: 'products', tbody: 'products-tbody', colspan: 7, empty: 'No products found.',
+    columns: PRODUCT_HAS_CHANNEL ? base + ',sales_channel' : base,
+    fallbackColumns: base, fallbackMatch: /sales_channel/, onFallback: () => { PRODUCT_HAS_CHANNEL = false; },
+    build: q => { q = q.order('created_at', { ascending: false }); return search ? q.ilike('name', `%${search}%`) : q; },
+    row: p => `
     <tr>
       <td>
         ${p.image_url 
@@ -333,7 +422,7 @@ async function loadProducts() {
           : `<div class="thumb-40 thumb-fallback"><i class="fa-solid fa-image"></i></div>`}
       </td>
       <td><strong>${escapeHTML(p.name)}</strong></td>
-      <td>${escapeHTML(p.category) || '-'}</td>
+      <td>${escapeHTML(p.category) || '-'}${p.sales_channel === 'onsite' ? '<br/><small style="color:var(--accent);">In-store only</small>' : ''}</td>
       <td>${formatPHP(p.unit_price)}</td>
       <td>
         ${p.stock_quantity <= p.low_stock_threshold 
@@ -350,11 +439,14 @@ async function loadProducts() {
         </button>
       </td>
     </tr>
-  `).join('');
-  tbody.querySelectorAll('img[data-fallback-icon]').forEach(img => {
+  `,
+    after: (tbody) => {
+tbody.querySelectorAll('img[data-fallback-icon]').forEach(img => {
     img.addEventListener('error', () => {
       img.replaceWith(Object.assign(document.createElement('div'), { className: 'thumb-40 thumb-fallback', innerHTML: '<i class="fa-solid fa-image"></i>' }));
     }, { once: true });
+  });
+    }
   });
 }
 document.getElementById('products-tbody').addEventListener('click', (e) => {
@@ -389,14 +481,16 @@ document.getElementById('product-form').addEventListener('submit', async (e) => 
     unit_price: parseFloat(document.getElementById('prod-price').value),
     stock_quantity: parseInt(document.getElementById('prod-stock').value),
     low_stock_threshold: parseInt(document.getElementById('prod-threshold').value),
-    status: document.getElementById('prod-status').value
+    status: document.getElementById('prod-status').value,
+    sales_channel: document.getElementById('prod-channel').value
   };
 
-  let error;
-  if (id) {
-    ({ error } = await db.from('products').update(payload).eq('id', id));
-  } else {
-    ({ error } = await db.from('products').insert([payload]));
+  const save = (pl) => id ? db.from('products').update(pl).eq('id', id) : db.from('products').insert([pl]);
+  let { error } = await save(payload);
+  if (error && /sales_channel/.test(error.message || '')) {       // column not deployed yet (Phase 2)
+    const { sales_channel, ...legacy } = payload;
+    ({ error } = await save(legacy));
+    if (!error) showToast('Saved, but "Sales channel" needs the database update first.', 'info');
   }
 
   if (error) {
@@ -420,6 +514,7 @@ async function editProduct(id) {
   document.getElementById('prod-stock').value = data.stock_quantity;
   document.getElementById('prod-threshold').value = data.low_stock_threshold || 5;
   document.getElementById('prod-status').value = data.status;
+  document.getElementById('prod-channel').value = data.sales_channel || 'online';
 
   document.getElementById('modal-product-title').innerText = 'Edit Product';
   document.getElementById('product-modal').classList.add('active');
@@ -438,24 +533,12 @@ async function deleteProduct(id, name) {
 }
 
 // 6. INVENTORY LOGS & STOCK ADJUSTMENT MODULE
-async function loadInventoryLogs() {
-  const tbody = document.getElementById('inventory-tbody');
-  const { data, error } = await db
-    .from('inventory_logs')
-    .select('*, products(name)')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    tbody.innerHTML = `<tr><td colspan="5" style="color: var(--danger-text)">Error: ${escapeHTML(error.message)}</td></tr>`;
-    return;
-  }
-
-  if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">No inventory activity logged.</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = data.map(log => `
+async function loadInventoryLogs(reset) {
+  return pagedLoad('inventory', {
+    reset, table: 'inventory_logs', tbody: 'inventory-tbody', colspan: 5, empty: 'No inventory activity logged.',
+    columns: 'id,created_at,change_type,change_amount,reason,products(name)',
+    build: q => q.order('created_at', { ascending: false }),
+    row: log => `
     <tr>
       <td>${new Date(log.created_at).toLocaleString('en-PH')}</td>
       <td><strong>${log.products ? escapeHTML(log.products.name) : 'Unlinked Product'}</strong></td>
@@ -465,7 +548,8 @@ async function loadInventoryLogs() {
       </td>
       <td>${escapeHTML(log.reason) || '-'}</td>
     </tr>
-  `).join('');
+  `
+  });
 }
 
 async function openLogModal() {
@@ -518,28 +602,17 @@ document.getElementById('log-form').addEventListener('submit', async (e) => {
 });
 
 // 7. ORDERS MODULE
-async function loadOrders() {
-  const tbody = document.getElementById('orders-tbody');
+async function loadOrders(reset) {
   const search = sanitizeSearchTerm(document.getElementById('order-search').value);
-
-  let query = db.from('orders').select('*').order('created_at', { ascending: false });
-  if (search) {
-    query = query.or(`customer_name.ilike.%${search}%,order_number.ilike.%${search}%,customer_email.ilike.%${search}%`); // search is pre-sanitized by sanitizeSearchTerm() above (A6)
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    tbody.innerHTML = `<tr><td colspan="6" style="color: var(--danger-text)">Error: ${escapeHTML(error.message)}</td></tr>`;
-    return;
-  }
-
-  if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">No orders recorded.</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = data.map(o => `
+  return pagedLoad('orders', {
+    reset, table: 'orders', tbody: 'orders-tbody', colspan: 6, empty: 'No orders recorded.',
+    columns: 'id,order_number,customer_name,customer_email,total_amount,status,created_at',
+    build: q => {
+      q = q.order('created_at', { ascending: false });
+      // search is pre-sanitized by sanitizeSearchTerm() (A6)
+      return search ? q.or(`customer_name.ilike.%${search}%,order_number.ilike.%${search}%,customer_email.ilike.%${search}%`) : q;
+    },
+    row: o => `
     <tr>
       <td><strong>${escapeHTML(o.order_number)}</strong></td>
       <td>
@@ -547,13 +620,13 @@ async function loadOrders() {
         <small style="color: var(--text-muted);">${escapeHTML(o.customer_email) || 'No email'}</small>
       </td>
       <td><strong>${formatPHP(o.total_amount)}</strong></td>
-      <td><span class="badge badge-${o.status}">${o.status}</span></td>
+      <td><span class="badge badge-${o.status}">${escapeHTML(String(o.status).replace(/_/g, ' '))}</span></td>
       <td>${new Date(o.created_at).toLocaleDateString('en-PH')}</td>
       <td>
         <div style="display:flex; gap:0.5rem; align-items:center;">
           <select class="form-control order-status-select" style="padding:0.25rem 0.5rem; font-size:0.8125rem;" data-id="${escapeHTML(o.id)}">
-            ${['pending','processing','shipped','completed','cancelled'].map(s => 
-              `<option value="${s}" ${o.status === s ? 'selected' : ''}>${s}</option>`
+            ${['pending','processing','ready_for_pickup','shipped','completed','cancelled'].map(s => 
+              `<option value="${s}" ${o.status === s ? 'selected' : ''}>${s.replace(/_/g, ' ')}</option>`
             ).join('')}
           </select>
           <button class="btn btn-secondary btn-sm" data-action="view-order" data-id="${escapeHTML(o.id)}" data-order-number="${escapeHTML(o.order_number)}">
@@ -562,7 +635,8 @@ async function loadOrders() {
         </div>
       </td>
     </tr>
-  `).join('');
+  `
+  });
 }
 document.getElementById('orders-tbody').addEventListener('click', (e) => {
   const btn = e.target.closest('[data-action="view-order"]'); if (!btn) return;
@@ -617,21 +691,12 @@ function closeOrderModal() {
 }
 
 // 8. VISIT BOOKINGS MODULE
-async function loadBookings() {
-  const tbody = document.getElementById('bookings-tbody');
-  const { data, error } = await db.from('visit_bookings').select('*').order('visit_date', { ascending: true });
-
-  if (error) {
-    tbody.innerHTML = `<tr><td colspan="6" style="color: var(--danger-text)">Error: ${escapeHTML(error.message)}</td></tr>`;
-    return;
-  }
-
-  if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">No scheduled visit bookings.</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = data.map(b => `
+async function loadBookings(reset) {
+  return pagedLoad('bookings', {
+    reset, table: 'visit_bookings', tbody: 'bookings-tbody', colspan: 6, empty: 'No scheduled visit bookings.',
+    columns: 'id,visitor_name,visitor_email,visitor_phone,visit_date,time_slot,pax,visit_type,status',
+    build: q => q.order('visit_date', { ascending: false }),   // newest visit first
+    row: b => `
     <tr>
       <td>
         <strong>${escapeHTML(b.visitor_name)}</strong><br/>
@@ -649,7 +714,8 @@ async function loadBookings() {
         </select>
       </td>
     </tr>
-  `).join('');
+  `
+  });
 }
 
 async function updateBookingStatus(bookingId, status) {
@@ -703,119 +769,95 @@ function timeAgo(iso) {
 }
 
 async function loadDashboard() {
-  const [ordersRes, productsRes, inquiriesRes, bookingsRes, staffRes] = await Promise.all([
-    db.from('orders').select('*').order('created_at', { ascending: false }),
-    db.from('products').select('id, status, stock_quantity, low_stock_threshold'),
-    db.from('inquiries').select('*').order('created_at', { ascending: false }),
-    db.from('visit_bookings').select('*').order('visit_date', { ascending: true }),
-    db.from('staff').select('*').order('last_seen_at', { ascending: false })
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });   // YYYY-MM-DD in PH time
+  const [kpiRes, ordersRes, msgsRes, bookRes] = await Promise.all([
+    db.rpc('admin_dashboard_kpis'),
+    db.from('orders').select('id,order_number,customer_name,total_amount,status,created_at').order('created_at', { ascending: false }).limit(5),
+    db.from('inquiries').select('id,name,inquiry_type,message,status,created_at').order('created_at', { ascending: false }).limit(5),
+    db.from('visit_bookings').select('id,visitor_name,visit_date,time_slot,visit_type,pax,status')
+      .gte('visit_date', today).in('status', ['pending', 'approved']).order('visit_date', { ascending: true }).limit(5)
   ]);
+  const orders = ordersRes.data || [], inquiries = msgsRes.data || [], upcoming = bookRes.data || [];
 
-  const orders = ordersRes.data || [];
-  const products = productsRes.data || [];
-  const inquiries = inquiriesRes.data || [];
-  const bookings = bookingsRes.data || [];
-  const staff = staffRes.data || [];
+  // KPIs: one RPC when deployed (Phase 2); otherwise light count queries.
+  const k = (!kpiRes.error && kpiRes.data) ? kpiRes.data : await dashboardKpisFallback(today);
+  const setK = (id, v) => { document.getElementById(id).textContent = v; };
+  setK('kpi-revenue', formatPHP(k.revenue));
+  setK('kpi-orders', k.orders_total);
+  setK('kpi-pending', k.orders_pending);
+  setK('kpi-lowstock', k.low_stock);
+  setK('kpi-inquiries', k.inquiries_new);
+  setK('kpi-bookings', k.bookings_upcoming);
+  setK('kpi-online', k.staff_online);
+  setK('kpi-products', k.products_active);
 
-  // KPIs
-  const revenue = orders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + Number(o.total_amount || 0), 0);
-  document.getElementById('kpi-revenue').textContent = formatPHP(revenue);
-  document.getElementById('kpi-revenue-sub').textContent = orders.length + ' orders total';
-  document.getElementById('kpi-orders').textContent = orders.length;
-  const pending = orders.filter(o => o.status === 'pending').length;
-  document.getElementById('kpi-orders-sub').textContent = pending + ' awaiting action';
-  document.getElementById('kpi-pending').textContent = pending;
-
-  const lowStock = products.filter(p => p.stock_quantity <= p.low_stock_threshold);
-  document.getElementById('kpi-lowstock').textContent = lowStock.length;
-
-  const newInquiries = inquiries.filter(i => i.status === 'new').length;
-  document.getElementById('kpi-inquiries').textContent = newInquiries;
-  const nowStr = new Date().toISOString().slice(0, 10);
-  const upcomingBookings = bookings.filter(b => b.visit_date >= nowStr && ['pending', 'approved'].includes(b.status));
-  document.getElementById('kpi-bookings').textContent = upcomingBookings.length;
-
-  const onlineCutoff = Date.now() - 5 * 60 * 1000;
-  const onlineStaff = staff.filter(s => s.last_seen_at && new Date(s.last_seen_at).getTime() > onlineCutoff);
-  document.getElementById('kpi-online').textContent = onlineStaff.length;
-  document.getElementById('kpi-products').textContent = products.filter(p => p.status === 'active').length;
-
-  // messages nav badge
   const navBadge = document.getElementById('messages-nav-badge');
-  if (newInquiries > 0) { navBadge.textContent = newInquiries; navBadge.style.display = 'inline-flex'; }
+  if (k.inquiries_new > 0) { navBadge.textContent = k.inquiries_new; navBadge.style.display = 'inline-flex'; }
   else { navBadge.style.display = 'none'; }
 
-  // recent orders
-  const dOrders = document.getElementById('dash-orders-tbody');
-  dOrders.innerHTML = orders.length ? orders.slice(0, 5).map(o => `
+  document.getElementById('dash-orders-tbody').innerHTML = orders.length ? orders.map(o => `
     <tr>
       <td><strong>${escapeHTML(o.order_number)}</strong></td>
       <td>${escapeHTML(o.customer_name)}</td>
       <td>${formatPHP(o.total_amount)}</td>
-      <td><span class="badge badge-${o.status}">${o.status}</span></td>
+      <td><span class="badge badge-${escapeHTML(o.status)}">${escapeHTML(String(o.status).replace(/_/g, ' '))}</span></td>
       <td>${new Date(o.created_at).toLocaleDateString('en-PH')}</td>
     </tr>`).join('') : `<tr><td colspan="5" style="text-align:center;">No orders yet.</td></tr>`;
 
-  // recent messages
-  const dMsgs = document.getElementById('dash-messages-tbody');
-  dMsgs.innerHTML = inquiries.length ? inquiries.slice(0, 5).map(i => `
+  document.getElementById('dash-messages-tbody').innerHTML = inquiries.length ? inquiries.map(i => `
     <tr>
       <td><strong>${escapeHTML(i.name)}</strong></td>
       <td><span class="badge badge-pending">${escapeHTML(i.inquiry_type)}</span></td>
-      <td style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHTML(i.message)}</td>
-      <td><span class="badge badge-${i.status}">${escapeHTML(i.status).replace('_',' ')}</span></td>
+      <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHTML(i.message)}</td>
+      <td><span class="badge badge-${escapeHTML(i.status)}">${escapeHTML(i.status).replace('_', ' ')}</span></td>
     </tr>`).join('') : `<tr><td colspan="4" style="text-align:center;">No messages yet.</td></tr>`;
 
-  // upcoming bookings
-  const dBook = document.getElementById('dash-bookings-tbody');
-  dBook.innerHTML = upcomingBookings.length ? upcomingBookings.slice(0, 5).map(b => `
+  document.getElementById('dash-bookings-tbody').innerHTML = upcoming.length ? upcoming.map(b => `
     <tr>
       <td><strong>${escapeHTML(b.visitor_name)}</strong></td>
-      <td>${b.visit_date}</td>
+      <td>${escapeHTML(b.visit_date)}<br/><small style="color:var(--text-muted);">${escapeHTML(b.time_slot || '')}</small></td>
+      <td><span class="badge badge-pending">${escapeHTML(b.visit_type)}</span></td>
       <td>${b.pax} pax</td>
-    </tr>`).join('') : `<tr><td colspan="3" style="text-align:center;">No upcoming visits.</td></tr>`;
+      <td><span class="badge badge-${escapeHTML(b.status)}">${escapeHTML(b.status)}</span></td>
+    </tr>`).join('') : `<tr><td colspan="5" style="text-align:center;">No upcoming visits.</td></tr>`;
+}
 
-  // currently online panel
-  const presenceEl = document.getElementById('dash-presence-list');
-  if (!onlineStaff.length) {
-    presenceEl.innerHTML = `<li class="empty-mini">Nobody else is online right now.</li>`;
-  } else {
-    presenceEl.innerHTML = onlineStaff.map(s => {
-      const initials = (s.full_name || s.email).split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
-      return `
-      <li class="presence-item">
-        <div class="presence-avatar">${escapeHTML(initials)}<span class="presence-dot online"></span></div>
-        <div>
-          <div class="presence-name">${escapeHTML(s.full_name)}</div>
-          <div class="presence-meta">${escapeHTML(s.role)} · active ${timeAgo(s.last_seen_at)}</div>
-        </div>
-      </li>`;
-    }).join('');
-  }
+// Fallback for before admin_dashboard_kpis() exists: two narrow selects + head-only counts.
+async function dashboardKpisFallback(today) {
+  const head = (t) => db.from(t).select('id', { count: 'exact', head: true });
+  const [o, p, inq, bk, online] = await Promise.all([
+    db.from('orders').select('total_amount,status'),
+    db.from('products').select('status,stock_quantity,low_stock_threshold'),
+    head('inquiries').eq('status', 'new'),
+    head('visit_bookings').gte('visit_date', today).in('status', ['pending', 'approved']),
+    head('staff').gt('last_seen_at', new Date(Date.now() - 5 * 60 * 1000).toISOString())
+  ]);
+  const orders = o.data || [], products = p.data || [];
+  return {
+    revenue: orders.filter(x => x.status !== 'cancelled').reduce((sum, x) => sum + Number(x.total_amount || 0), 0),
+    orders_total: orders.length,
+    orders_pending: orders.filter(x => x.status === 'pending').length,
+    low_stock: products.filter(x => x.stock_quantity <= x.low_stock_threshold).length,
+    inquiries_new: inq.count || 0,
+    bookings_upcoming: bk.count || 0,
+    products_active: products.filter(x => x.status === 'active').length,
+    staff_online: online.count || 0
+  };
 }
 
 // 11. MESSAGES / INQUIRIES MODULE
 let activeMessageId = null;
-async function loadMessages() {
-  const tbody = document.getElementById('messages-tbody');
+async function loadMessages(reset) {
   const search = sanitizeSearchTerm(document.getElementById('message-search').value);
-
-  let query = db.from('inquiries').select('*').order('created_at', { ascending: false });
-  if (search) {
-    query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,message.ilike.%${search}%`); // search is pre-sanitized by sanitizeSearchTerm() above (A6)
-  }
-  const { data, error } = await query;
-
-  if (error) {
-    tbody.innerHTML = `<tr><td colspan="6" style="color: var(--danger-text)">Error: ${escapeHTML(error.message)}</td></tr>`;
-    return;
-  }
-  if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">No messages yet.</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = data.map(i => `
+  return pagedLoad('messages', {
+    reset, table: 'inquiries', tbody: 'messages-tbody', colspan: 6, empty: 'No messages yet.',
+    columns: 'id,name,email,inquiry_type,message,created_at,status',
+    build: q => {
+      q = q.order('created_at', { ascending: false });
+      // search is pre-sanitized by sanitizeSearchTerm() (A6)
+      return search ? q.or(`name.ilike.%${search}%,email.ilike.%${search}%,message.ilike.%${search}%`) : q;
+    },
+    row: i => `
     <tr>
       <td>
         <strong>${escapeHTML(i.name)}</strong><br/>
@@ -826,7 +868,8 @@ async function loadMessages() {
       <td>${new Date(i.created_at).toLocaleDateString('en-PH')}</td>
       <td><span class="badge badge-${i.status}">${escapeHTML(i.status).replace('_',' ')}</span></td>
       <td><button class="btn btn-secondary btn-sm" data-action="view-message" data-id="${escapeHTML(i.id)}"><i class="fa-solid fa-eye"></i> View</button></td>
-    </tr>`).join('');
+    </tr>`
+  });
 }
 
 async function openMessageModal(id) {
@@ -863,87 +906,88 @@ async function saveMessageStatus() {
 }
 
 // 12. STAFF MODULE
-async function loadStaff() {
-  const tbody = document.getElementById('staff-tbody');
-  const { data, error } = await db.from('staff').select('*').order('created_at', { ascending: false });
-
-  if (error) {
-    tbody.innerHTML = `<tr><td colspan="6" style="color: var(--danger-text)">Error: ${escapeHTML(error.message)}</td></tr>`;
-    return;
-  }
-  if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">No staff added yet.</td></tr>`;
-    return;
-  }
-
+async function loadStaff(reset) {
+  const base = 'id,auth_user_id,full_name,email,phone,role,status,last_seen_at';
   const onlineCutoff = Date.now() - 5 * 60 * 1000;
-  tbody.innerHTML = data.map(s => {
-    const online = s.last_seen_at && new Date(s.last_seen_at).getTime() > onlineCutoff;
-    const isSelf = CURRENT_SESSION && s.auth_user_id === CURRENT_SESSION.user.id;
-    return `
+  return pagedLoad('staff', {
+    reset, table: 'staff', tbody: 'staff-tbody', colspan: 5, empty: 'Nobody has signed in yet.',
+    columns: base + ',first_name,last_name', fallbackColumns: base, fallbackMatch: /first_name|last_name/,
+    // only staff who have logged in at least once, most recent first
+    build: q => q.not('last_seen_at', 'is', null).order('last_seen_at', { ascending: false, nullsFirst: false }),
+    row: (s) => {
+      const online = s.last_seen_at && new Date(s.last_seen_at).getTime() > onlineCutoff;
+      const isSelf = CURRENT_SESSION && s.auth_user_id === CURRENT_SESSION.user.id;
+      const fullName = (s.first_name || s.last_name) ? `${s.first_name || ''} ${s.last_name || ''}`.trim() : s.full_name;
+      let action = '<span style="color:var(--text-muted);">—</span>';
+      if (isSelf) action = '<span style="color:var(--text-muted); font-size:.8125rem;">You</span>';
+      else if (canManageRole(s.role)) action = s.status === 'suspended'
+        ? `<button class="btn btn-secondary btn-sm" data-action="toggle-staff" data-id="${escapeHTML(s.id)}" data-status="active"><i class="fa-solid fa-rotate-left"></i> Reactivate</button>`
+        : `<button class="btn btn-danger btn-sm" data-action="toggle-staff" data-id="${escapeHTML(s.id)}" data-status="suspended"><i class="fa-solid fa-ban"></i> Suspend</button>`;
+      return `
     <tr>
-      <td><strong>${escapeHTML(s.full_name)}</strong> ${online ? '<span class="presence-dot online" style="position:static; display:inline-block; margin-left:.3rem;"></span>' : ''}</td>
+      <td><strong>${escapeHTML(fullName)}</strong> ${online ? '<span class="presence-dot online" style="position:static; display:inline-block; margin-left:.3rem;"></span>' : ''}</td>
       <td>${escapeHTML(s.email)}<br/><small style="color:var(--text-muted);">${escapeHTML(s.phone) || 'No phone'}</small></td>
-      <td><span class="badge badge-${s.role}">${escapeHTML(s.role)}</span></td>
-      <td><span class="badge badge-${s.status}">${escapeHTML(s.status)}</span></td>
+      <td><span class="badge badge-${escapeHTML(s.role)}">${escapeHTML(s.role)}</span> <span class="badge badge-${escapeHTML(s.status)}">${escapeHTML(s.status)}</span></td>
       <td>${timeAgo(s.last_seen_at)}</td>
-      <td>
-        ${isSelf ? '<span style="color:var(--text-muted); font-size:.8125rem;">You</span>' : (s.status === 'suspended'
-          ? `<button class="btn btn-secondary btn-sm" data-action="toggle-staff" data-id="${escapeHTML(s.id)}" data-status="active"><i class="fa-solid fa-rotate-left"></i> Reactivate</button>`
-          : `<button class="btn btn-danger btn-sm" data-action="toggle-staff" data-id="${escapeHTML(s.id)}" data-status="suspended"><i class="fa-solid fa-ban"></i> Suspend</button>`)}
-      </td>
+      <td>${action}</td>
     </tr>`;
-  }).join('');
+    }
+  });
 }
 
-function openStaffModal() {
-  document.getElementById('staff-form').reset();
-  document.getElementById('staff-result').innerHTML = '';
-  document.getElementById('staff-modal').classList.add('active');
-  focusModal(document.getElementById('staff-modal'));
+// ---- Staff Registration tab (owner + manager only; server re-checks) ----
+const PH_PHONE = /^(\+63|0)9\d{9}$/;
+function initRegistrationForm() {
+  const dob = document.getElementById('reg-dob');
+  const d = new Date(); d.setFullYear(d.getFullYear() - 18);
+  dob.max = d.toISOString().slice(0, 10);          // must be at least 18
+  dob.min = '1900-01-01';
 }
 
-function closeStaffModal() {
-  document.getElementById('staff-modal').classList.remove('active');
-}
-
-document.getElementById('staff-form').addEventListener('submit', async (e) => {
+document.getElementById('reg-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const btn = document.getElementById('staff-submit-btn');
-  btn.disabled = true; btn.textContent = 'Creating…';
-
+  if (!canRegister()) return showToast('You do not have permission to register staff.', 'error');
+  const btn = document.getElementById('reg-submit-btn');
+  const val = id => document.getElementById(id).value.trim();
   const payload = {
-    full_name: document.getElementById('staff-name').value,
-    email: document.getElementById('staff-email').value,
-    phone: document.getElementById('staff-phone').value,
-    role: document.getElementById('staff-role').value
+    first_name: val('reg-first'), last_name: val('reg-last'), date_of_birth: val('reg-dob'),
+    email: val('reg-email').toLowerCase(), phone: val('reg-phone').replace(/[\s-]/g, ''), role: val('reg-role')
   };
+  payload.full_name = `${payload.first_name} ${payload.last_name}`.trim();   // for the v1 edge function
+  const err = document.getElementById('reg-error'); err.textContent = '';
+  const fail = (m) => { err.textContent = m; };
+  if (!payload.first_name || !payload.last_name) return fail('First and last name are required.');
+  if (!/^\S+@\S+\.\S+$/.test(payload.email)) return fail('Enter a valid email address.');
+  if (!PH_PHONE.test(payload.phone)) return fail('Enter a valid PH mobile number (09XX XXX XXXX or +63 9XX XXX XXXX).');
+  const limit = new Date(); limit.setFullYear(limit.getFullYear() - 18);
+  if (!payload.date_of_birth || new Date(payload.date_of_birth) > limit) return fail('Staff must be at least 18 years old.');
+  if (!allowedRoles().includes(payload.role)) return fail('You can only register roles below your own.');
 
+  btn.disabled = true; btn.textContent = 'Creating…';
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/create-staff-account`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${CURRENT_SESSION.access_token}`,
-        'apikey': SUPABASE_ANON_KEY
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${CURRENT_SESSION.access_token}`, 'apikey': SUPABASE_ANON_KEY },
       body: JSON.stringify(payload)
     });
-    const json = await res.json();
+    const json = await res.json().catch(() => ({}));
+    if (res.status === 409) throw new Error('This email is already registered.');
+    if (res.status === 403) throw new Error('You are not allowed to create that role.');
     if (!res.ok) throw new Error(json.error || 'Could not create staff account');
 
-    document.getElementById('staff-result').innerHTML = `
+    document.getElementById('reg-result').innerHTML = `
       <div class="form-success" style="border:1.5px solid var(--success); background:rgba(16,185,129,.12); border-radius:8px; padding:1rem;">
         <strong style="display:block; color:var(--success); margin-bottom:.4rem;">Account created for ${escapeHTML(payload.full_name)}</strong>
-        <p style="font-size:.85rem; margin-bottom:.4rem;">Share these sign-in details with them securely — this password won't be shown again.</p>
+        <p style="font-size:.85rem; margin-bottom:.4rem;">Share these sign-in details securely — this password won't be shown again.</p>
         <code style="display:block; background:var(--bg-base); padding:.6rem .8rem; border-radius:6px; font-size:.85rem;">
           ${escapeHTML(payload.email)}<br>${escapeHTML(json.temp_password)}
         </code>
       </div>`;
+    document.getElementById('reg-form').reset(); applyRoleUI();
     showToast('Staff account created', 'success');
-    loadStaff();
-  } catch (err) {
-    showToast('Error: ' + err.message, 'error');
+    if (pagerState.staff) loadStaff();              // refresh only if that tab was already loaded
+  } catch (ex) {
+    showToast('Error: ' + ex.message, 'error');
   } finally {
     btn.disabled = false; btn.textContent = 'Create Account';
   }
@@ -983,8 +1027,6 @@ const CLICK_ACTIONS = {
   'open-log-modal':        () => openLogModal(),
   'close-log-modal':       () => closeLogModal(),
   'close-order-modal':     () => closeOrderModal(),
-  'open-staff-modal':      () => openStaffModal(),
-  'close-staff-modal':     () => closeStaffModal(),
   'save-settings':         () => saveSettings(),
   'close-message-modal':   () => closeMessageModal(),
   'save-message-status':   () => saveMessageStatus(),
@@ -1013,9 +1055,9 @@ document.addEventListener('click', (e) => {
 function debounce(fn, ms) {
   let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
-document.getElementById('product-search').addEventListener('input', debounce(loadProducts, 250));
-document.getElementById('order-search').addEventListener('input', debounce(loadOrders, 250));
-document.getElementById('message-search').addEventListener('input', debounce(loadMessages, 250));
+document.getElementById('product-search').addEventListener('input', debounce(() => loadProducts(true), 250));
+document.getElementById('order-search').addEventListener('input', debounce(() => loadOrders(true), 250));
+document.getElementById('message-search').addEventListener('input', debounce(() => loadMessages(true), 250));
 
 // Logo fallback (was onerror="handleImageError(this)"). The error can fire
 // before this script runs, so also check images that have already failed.

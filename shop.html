@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/style.css?v=5">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -75,14 +75,16 @@
     <div class="crumb"><a href="index.html">Home</a> / Shop</div>
     <div class="eyebrow">Take It Home</div>
     <h1>What we make.</h1>
-    <p class="lede">Everything below is hand-made in small batches in Cabatuan. Pick a pack, choose pickup or delivery, and check out as a guest with just your name, email and number.</p>
+    <p class="lede">Hand-made in small batches in Cabatuan. Order online for pickup or delivery, or drop by the shop for in-store-only items.</p>
   </div>
 </section>
 
 <section id="shop-list">
   <div class="wrap">
-    <div class="eyebrow">Order Online</div>
+    <div class="eyebrow">The Shop</div>
     <h2 style="margin-bottom:1rem">Pick your box, we'll confirm the rest.</h2>
+    <div class="channel-row" id="channelRow" role="group" aria-label="Where to buy"><button type="button" class="chip channel" data-channel="online" aria-pressed="true">Order Online <span class="ch-n" id="chN-online"></span></button><button type="button" class="chip channel" data-channel="onsite" aria-pressed="false">In-Store Only <span class="ch-n" id="chN-onsite"></span></button></div>
+    <p class="channel-note" id="channelNote">Order these online for pickup or delivery.</p>
     <p id="maintBanner" class="inline-notice error" role="status" hidden><strong>Online orders are paused for now.</strong> Message us on Facebook or check back soon.</p>
     <div id="orderConfirm" hidden></div>
     <div class="shop-toolbar">
@@ -94,41 +96,7 @@
         <select id="shopSort"><option value="featured">Featured</option><option value="price-asc">Price: low to high</option><option value="price-desc">Price: high to low</option></select>
       </div>
     </div>
-    <div class="shop-layout">
-      <div class="shop-grid" id="shopGrid"></div>
-      <aside class="cart-panel" id="cartPanel" aria-label="Shopping cart">
-        <div class="cart-head"><h3 id="cartHeading">Your cart</h3><button type="button" class="cart-close" id="cartClose" aria-label="Close cart">&times;</button></div>
-        <p class="inline-notice" id="cartNotice" role="status" tabindex="-1" hidden></p>
-        <div class="cart-empty" id="cartEmpty">Your cart is empty. Add something tasty.</div>
-        <ul class="cart-lines" id="cartLines"></ul>
-        <div class="totals" aria-live="polite">
-          <div><span>Subtotal</span><span id="tSub">&#8369;0.00</span></div>
-          <div id="tShipRow"><span>Shipping</span><span id="tShip">Pickup — free</span></div>
-          <div class="grand"><span>Total</span><b id="tTotal">&#8369;0.00</b></div>
-        </div>
-        <p class="free-ship" id="freeShip" hidden></p>
-        <button type="button" class="btn btn-primary" id="checkoutBtn" style="width:100%" disabled>Checkout</button>
-        <p style="text-align:center; font-size:.85rem; margin-top:.75rem"><a href="order-status.html">Already ordered? Track your order</a></p>
-        <form id="checkoutForm" class="checkout-form" novalidate>
-          <p class="checkout-note">Guest checkout — no account needed.</p>
-          <div class="field"><label for="co-name">Name</label><input id="co-name" name="name" autocomplete="name" required></div>
-          <div class="field"><label for="co-email">Email</label><input id="co-email" type="email" name="email" autocomplete="email" required></div>
-          <div class="field"><label for="co-phone">Mobile number</label><input id="co-phone" type="tel" name="phone" inputmode="tel" autocomplete="tel" placeholder="0917 123 4567" required></div>
-          <fieldset>
-            <legend>Get it by</legend>
-            <div class="choice-grid">
-              <label class="choice"><input type="radio" name="fulfillment" value="pickup" checked><span>Pickup<small id="pickupHint">Collect at our Cabatuan shop</small></span></label>
-              <label class="choice"><input type="radio" name="fulfillment" value="delivery"><span>Delivery<small id="deliveryHint">We'll confirm the delivery fee</small></span></label>
-            </div>
-          </fieldset>
-          <div class="field" id="addressField" hidden><label for="co-address">Delivery address</label><textarea id="co-address" name="address" autocomplete="street-address" placeholder="Street, barangay, town, province"></textarea></div>
-          <fieldset id="payGroup" hidden><legend>Payment</legend><div class="choice-grid" id="payChoices"></div></fieldset>
-          <div class="honeypot" aria-hidden="true"><label>Leave this empty<input type="text" name="p_hp" tabindex="-1" autocomplete="off"></label></div>
-          <button type="submit" class="btn btn-primary" style="width:100%">Place order</button>
-          <p class="form-legal">By placing this order you agree to the <a href="terms.html">Terms</a> and <a href="privacy.html">Privacy Notice</a>.</p>
-        </form>
-      </aside>
-    </div>
+    <div class="shop-grid" id="shopGrid"></div>
   </div>
 </section>
 
@@ -147,6 +115,43 @@
   </div>
 </section>
 
+<aside class="cart-panel" id="cartPanel" aria-label="Shopping cart" inert>
+  <div class="cart-head"><h3 id="cartHeading">Your cart</h3><button type="button" class="cart-close" id="cartClose" aria-label="Close cart">&times;</button></div>
+  <div class="cart-body">
+    <p class="inline-notice" id="cartNotice" role="status" tabindex="-1" hidden></p>
+    <div class="cart-empty" id="cartEmpty">Your cart is empty. Add something tasty.</div>
+    <ul class="cart-lines" id="cartLines"></ul>
+    <form id="checkoutForm" class="checkout-form" novalidate>
+          <p class="checkout-note">Guest checkout — no account needed.</p>
+          <div class="field"><label for="co-name">Name</label><input id="co-name" name="name" autocomplete="name" required></div>
+          <div class="field"><label for="co-email">Email</label><input id="co-email" type="email" name="email" autocomplete="email" required></div>
+          <div class="field"><label for="co-phone">Mobile number</label><input id="co-phone" type="tel" name="phone" inputmode="tel" autocomplete="tel" placeholder="0917 123 4567" required></div>
+          <fieldset>
+            <legend>Get it by</legend>
+            <div class="choice-grid">
+              <label class="choice"><input type="radio" name="fulfillment" value="pickup" checked><span>Pickup<small id="pickupHint">Collect at our Cabatuan shop</small></span></label>
+              <label class="choice"><input type="radio" name="fulfillment" value="delivery"><span>Delivery<small id="deliveryHint">We'll confirm the delivery fee</small></span></label>
+            </div>
+          </fieldset>
+          <div class="field" id="addressField" hidden><label for="co-address">Delivery address</label><textarea id="co-address" name="address" autocomplete="street-address" placeholder="Street, barangay, town, province"></textarea></div>
+          <fieldset id="payGroup" hidden><legend>Payment</legend><div class="choice-grid" id="payChoices"></div></fieldset>
+          <div class="honeypot" aria-hidden="true"><label>Leave this empty<input type="text" name="p_hp" tabindex="-1" autocomplete="off"></label></div>
+          <button type="submit" class="btn btn-primary" style="width:100%">Place order</button>
+          <p class="form-legal">By placing this order you agree to the <a href="terms.html">Terms</a> and <a href="privacy.html">Privacy Notice</a>.</p>
+        </form>
+  </div>
+  <div class="cart-foot">
+    <div class="totals" aria-live="polite">
+          <div><span>Subtotal</span><span id="tSub">&#8369;0.00</span></div>
+          <div id="tShipRow"><span>Shipping</span><span id="tShip">Pickup — free</span></div>
+          <div class="grand"><span>Total</span><b id="tTotal">&#8369;0.00</b></div>
+        </div>
+    <p class="free-ship" id="freeShip" hidden></p>
+    <button type="button" class="btn btn-primary" id="checkoutBtn" style="width:100%" disabled>Checkout</button>
+    <p style="text-align:center; font-size:.85rem; margin-top:.75rem"><a href="order-status.html">Already ordered? Track your order</a></p>
+  </div>
+</aside>
+<button type="button" class="cart-handle" id="cartHandle" aria-controls="cartPanel" aria-expanded="false" aria-label="Open cart"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6L5 3H2"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/></svg><span class="cart-handle-n" data-cart-count>0</span></button>
 <div class="cart-backdrop" id="cartBackdrop"></div>
 <div class="cart-bar" id="cartBar"><button type="button" id="cartBarBtn"><span id="cbCount">0 items</span><span>View cart · <b id="cbTotal">&#8369;0.00</b></span></button></div>
 <dialog id="productDialog" aria-label="Product details"></dialog>
@@ -193,10 +198,10 @@
 </footer>
 
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script defer src="js/ui.js"></script>
-<script defer src="js/cart.js"></script>
-<script defer src="js/supabase-client.js"></script>
-<script defer src="js/main.js"></script>
-<script defer src="js/shop.js"></script>
+<script defer src="js/ui.js?v=5"></script>
+<script defer src="js/cart.js?v=5"></script>
+<script defer src="js/supabase-client.js?v=5"></script>
+<script defer src="js/main.js?v=5"></script>
+<script defer src="js/shop.js?v=5"></script>
 </body>
 </html>

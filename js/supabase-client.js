@@ -23,9 +23,10 @@
      (e.g. checkoutRpc: 99) and redeploy to force the legacy path. */
   var REQUIRED = { checkoutRpc: 1, inquiryRpc: 1, bookingRpc: 1, availability: 1, orderStatusV2: 1, settings: 1, history: 2 };
 
-  var KNOWN_CODES = ['INVALID_INPUT', 'OUT_OF_STOCK', 'PRODUCT_UNAVAILABLE', 'RATE_LIMITED', 'NOT_ALLOWED', 'NOT_FOUND', 'INVALID_TRANSITION', 'DATE_UNAVAILABLE', 'CLOSED'];
+  var KNOWN_CODES = ['INVALID_INPUT', 'OUT_OF_STOCK', 'PRODUCT_UNAVAILABLE', 'RATE_LIMITED', 'NOT_ALLOWED', 'NOT_FOUND', 'INVALID_TRANSITION', 'DATE_UNAVAILABLE', 'CLOSED', 'NOT_ONLINE'];
 
   var PRODUCT_COLS = 'id,name,slug,image_url,category,unit_price,stock_quantity,low_stock_threshold,description,weight_label,is_featured,sort_order';
+  var PRODUCT_COLS_V5 = PRODUCT_COLS + ',sales_channel';
   var PRODUCT_COLS_LEGACY = 'id,name,slug,image_url,category,unit_price,stock_quantity,low_stock_threshold';
   var STOREFRONT_COLS = 'id,name,address,city,hours,phone,map_url,image_url,sort_order';
 
@@ -171,9 +172,13 @@
         var b = db.from('products').select(cols).eq('status', 'active');
         return (ordered ? b.order('sort_order', { ascending: true }) : b).order('created_at', { ascending: true });
       }
-      return q(PRODUCT_COLS, true).then(function (res) {
+      // v5: try with sales_channel; fall back to v4.1 columns if the column is not deployed yet.
+      return q(PRODUCT_COLS_V5, true).then(function (res) {
         if (!res.error) return res.data || [];
-        return q(PRODUCT_COLS_LEGACY, false).then(function (r2) { if (r2.error) throw r2.error; return r2.data || []; });
+        return q(PRODUCT_COLS, true).then(function (r1) {
+          if (!r1.error) return r1.data || [];
+          return q(PRODUCT_COLS_LEGACY, false).then(function (r2) { if (r2.error) throw r2.error; return r2.data || []; });
+        });
       });
     }).then(function (rows) { cacheSet('bt_products', rows); return rows; });
   }

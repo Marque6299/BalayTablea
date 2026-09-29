@@ -1,3 +1,5 @@
+> **v5 (Phase 1 frontend)** — see `PATCH_NOTES_v5.md` and `docs/Masterplan.md`. Phase 2 (Supabase) is pending.
+
 # Balay Tablea — Website (v3, Supabase-backed)
 
 A responsive marketing, tourism and e-commerce website for Sunburst's Balay

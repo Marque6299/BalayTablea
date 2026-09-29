@@ -14,7 +14,7 @@
 
   <!-- Supabase JS Client v2 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-  <script src="js/admin.js" defer></script>
+  <script src="js/admin.js?v=5" defer></script>
 
   <style>
     :root {
@@ -450,6 +450,35 @@
     .badge-suspended, .badge-declined2 { background: rgba(239, 68, 68, 0.15); color: var(--danger-text); }
     .badge-in_progress { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
     .badge-resolved { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+
+    /* ===== v5: compact KPI row, dashboard layout, pager, registration ===== */
+    .is-hidden { display: none !important; }
+    .kpi-row { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: .6rem; margin-bottom: 1.1rem; }
+    .kpi-row .kpi-card { padding: .6rem .7rem; border-radius: 10px; min-width: 0; }
+    .kpi-row .kpi-card .kpi-label { font-size: .625rem; letter-spacing: .04em; margin-bottom: .2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+    .kpi-row .kpi-card .kpi-value { font-size: 1.05rem; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dash-two { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; margin-bottom: 1rem; }
+    .dash-two > .card, .dash-full { min-width: 0; }
+    .dash-two th, .dash-two td, .dash-full th, .dash-full td { padding: .55rem .7rem; font-size: .78rem; }
+    .dash-two .panel-title, .dash-full .panel-title { padding: .8rem 1rem; font-size: .9rem; }
+    @media (max-width: 1200px) {
+      .kpi-row { display: flex; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: .3rem; }
+      .kpi-row .kpi-card { flex: 0 0 132px; scroll-snap-align: start; }
+    }
+    @media (max-width: 980px) { .dash-two { grid-template-columns: 1fr; } }
+    .badge-ready_for_pickup { background: rgba(59, 130, 246, 0.15); color: #93c5fd; }
+    .pager { display: flex; justify-content: space-between; align-items: center; gap: .75rem; flex-wrap: wrap; padding: .75rem 1rem; border-top: 1px solid var(--border-color); }
+    .pager:empty { display: none; }
+    .pager-info { font-size: .8rem; color: var(--text-muted); }
+    .pager-btns { display: flex; align-items: center; gap: .25rem; }
+    .pager-btn { min-width: 34px; height: 34px; padding: 0 .5rem; border-radius: 8px; border: 1px solid var(--border-color); background: transparent; color: var(--text-main); font-size: .8125rem; font-weight: 600; cursor: pointer; }
+    .pager-btn:hover:not(:disabled) { background: var(--bg-surface-elevated); }
+    .pager-btn[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .pager-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .pager-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .pager-gap { color: var(--text-muted); padding: 0 .25rem; }
+    .reg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; }
+    @media (max-width: 560px) { .reg-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -525,6 +554,9 @@
       <li class="nav-item" data-tab="staff">
         <i class="fa-solid fa-users"></i> Staff
       </li>
+      <li class="nav-item is-hidden" data-tab="registration">
+        <i class="fa-solid fa-user-plus"></i> Staff Registration
+      </li>
       <li class="nav-item" data-tab="settings">
         <i class="fa-solid fa-sliders"></i> Site Settings
       </li>
@@ -552,52 +584,18 @@
         <h2 class="page-title">Order Overview Dashboard</h2>
       </div>
 
-      <div class="kpi-grid">
-        <div class="kpi-card good">
-          <div class="kpi-label">Revenue (all orders)</div>
-          <div class="kpi-value" id="kpi-revenue">₱0.00</div>
-          <div class="kpi-sub" id="kpi-revenue-sub">&nbsp;</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Orders</div>
-          <div class="kpi-value" id="kpi-orders">0</div>
-          <div class="kpi-sub" id="kpi-orders-sub">&nbsp;</div>
-        </div>
-        <div class="kpi-card warn">
-          <div class="kpi-label">Pending Orders</div>
-          <div class="kpi-value" id="kpi-pending">0</div>
-          <div class="kpi-sub">Need action</div>
-        </div>
-        <div class="kpi-card danger">
-          <div class="kpi-label">Low Stock Items</div>
-          <div class="kpi-value" id="kpi-lowstock">0</div>
-          <div class="kpi-sub">At or below threshold</div>
-        </div>
-      </div>
-      <div class="kpi-grid" style="margin-top:-.5rem">
-        <div class="kpi-card">
-          <div class="kpi-label">New Messages</div>
-          <div class="kpi-value" id="kpi-inquiries">0</div>
-          <div class="kpi-sub">Unread inquiries</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Upcoming Visits</div>
-          <div class="kpi-value" id="kpi-bookings">0</div>
-          <div class="kpi-sub">Pending / approved</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Staff Online</div>
-          <div class="kpi-value" id="kpi-online">0</div>
-          <div class="kpi-sub">Active in the last 5 min</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Products Active</div>
-          <div class="kpi-value" id="kpi-products">0</div>
-          <div class="kpi-sub">Live on the storefront</div>
-        </div>
+      <div class="kpi-row">
+        <div class="kpi-card good" title="Revenue from all non-cancelled orders"><div class="kpi-label">Revenue</div><div class="kpi-value" id="kpi-revenue">₱0.00</div></div>
+        <div class="kpi-card" title="Total orders"><div class="kpi-label">Orders</div><div class="kpi-value" id="kpi-orders">0</div></div>
+        <div class="kpi-card warn" title="Orders that need action"><div class="kpi-label">Pending</div><div class="kpi-value" id="kpi-pending">0</div></div>
+        <div class="kpi-card danger" title="Products at or below their stock threshold"><div class="kpi-label">Low Stock</div><div class="kpi-value" id="kpi-lowstock">0</div></div>
+        <div class="kpi-card" title="Unread inquiries"><div class="kpi-label">Messages</div><div class="kpi-value" id="kpi-inquiries">0</div></div>
+        <div class="kpi-card" title="Upcoming pending / approved visits"><div class="kpi-label">Visits</div><div class="kpi-value" id="kpi-bookings">0</div></div>
+        <div class="kpi-card" title="Staff active in the last 5 minutes"><div class="kpi-label">Staff Online</div><div class="kpi-value" id="kpi-online">0</div></div>
+        <div class="kpi-card" title="Products live on the storefront"><div class="kpi-label">Active Products</div><div class="kpi-value" id="kpi-products">0</div></div>
       </div>
 
-      <div class="dash-grid">
+      <div class="dash-two">
         <div class="card">
           <div class="panel-title">Recent Orders <a href="#" data-tab-link="orders">View all →</a></div>
           <div class="table-container">
@@ -608,15 +606,6 @@
           </div>
         </div>
         <div class="card">
-          <div class="panel-title">Currently Online</div>
-          <ul class="presence-list" id="dash-presence-list">
-            <li class="empty-mini">Loading…</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="dash-grid" style="margin-top:1.5rem">
-        <div class="card">
           <div class="panel-title">Recent Messages <a href="#" data-tab-link="messages">View all →</a></div>
           <div class="table-container">
             <table>
@@ -625,14 +614,15 @@
             </table>
           </div>
         </div>
-        <div class="card">
-          <div class="panel-title">Upcoming Bookings</div>
-          <div class="table-container">
-            <table>
-              <thead><tr><th>Visitor</th><th>Date</th><th>Pax</th></tr></thead>
-              <tbody id="dash-bookings-tbody"><tr><td colspan="3" style="text-align:center;">Loading…</td></tr></tbody>
-            </table>
-          </div>
+      </div>
+
+      <div class="card dash-full">
+        <div class="panel-title">Upcoming Bookings <a href="#" data-tab-link="bookings">View all →</a></div>
+        <div class="table-container">
+          <table>
+            <thead><tr><th>Visitor</th><th>Date &amp; time</th><th>Type</th><th>Pax</th><th>Status</th></tr></thead>
+            <tbody id="dash-bookings-tbody"><tr><td colspan="5" style="text-align:center;">Loading…</td></tr></tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -667,6 +657,7 @@
             </tbody>
           </table>
         </div>
+        <div class="pager" id="pager-products"></div>
       </div>
     </section>
 
@@ -695,6 +686,7 @@
             </tbody>
           </table>
         </div>
+        <div class="pager" id="pager-inventory"></div>
       </div>
     </section>
 
@@ -722,6 +714,7 @@
             </tbody>
           </table>
         </div>
+        <div class="pager" id="pager-orders"></div>
       </div>
     </section>
 
@@ -748,6 +741,7 @@
             </tbody>
           </table>
         </div>
+        <div class="pager" id="pager-bookings"></div>
       </div>
     </section>
 
@@ -775,6 +769,7 @@
             </tbody>
           </table>
         </div>
+        <div class="pager" id="pager-messages"></div>
       </div>
     </section>
 
@@ -782,28 +777,52 @@
     <section id="sec-staff" class="tab-content">
       <div class="top-bar">
         <h2 class="page-title">Staff &amp; Access</h2>
-        <button class="btn btn-primary" data-action="open-staff-modal">
-          <i class="fa-solid fa-user-plus"></i> Add Staff
-        </button>
       </div>
       <div class="card">
         <div class="table-container">
           <table>
             <thead>
               <tr>
-                <th>Name</th>
+                <th>Full Name</th>
                 <th>Contact</th>
-                <th>Role</th>
-                <th>Status</th>
+                <th>Role / Status</th>
                 <th>Last Active</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody id="staff-tbody">
-              <tr><td colspan="6" style="text-align: center;">Loading staff...</td></tr>
+              <tr><td colspan="5" style="text-align: center;">Loading staff...</td></tr>
             </tbody>
           </table>
         </div>
+        <div class="pager" id="pager-staff"></div>
+      </div>
+    </section>
+
+    <!-- STAFF REGISTRATION (owner + manager only) -->
+    <section id="sec-registration" class="tab-content">
+      <div class="top-bar">
+        <h2 class="page-title">Staff Registration</h2>
+      </div>
+      <div class="card" style="max-width:640px; padding:1.5rem;">
+        <p style="color:var(--text-muted); font-size:.8125rem; margin-bottom:1.25rem;">
+          Creates a dashboard login and a one-time temporary password to share securely. You can only register roles below your own.
+        </p>
+        <form id="reg-form" novalidate>
+          <div class="reg-grid">
+            <div class="input-group"><label for="reg-first">First Name</label><input type="text" id="reg-first" class="form-control" autocomplete="off" required /></div>
+            <div class="input-group"><label for="reg-last">Last Name</label><input type="text" id="reg-last" class="form-control" autocomplete="off" required /></div>
+            <div class="input-group"><label for="reg-dob">Date of Birth</label><input type="date" id="reg-dob" class="form-control" required /></div>
+            <div class="input-group"><label for="reg-phone">Phone Number</label><input type="tel" id="reg-phone" class="form-control" inputmode="tel" placeholder="0917 123 4567" required /></div>
+            <div class="input-group"><label for="reg-email">Email</label><input type="email" id="reg-email" class="form-control" autocomplete="off" required /></div>
+            <div class="input-group"><label for="reg-role">Role</label><select id="reg-role" class="form-control"></select></div>
+          </div>
+          <p id="reg-error" role="alert" style="color:var(--danger-text); font-size:.8125rem; min-height:1.2em; margin:.25rem 0 .75rem;"></p>
+          <div style="display:flex; justify-content:flex-end;">
+            <button type="submit" class="btn btn-primary" id="reg-submit-btn">Create Account</button>
+          </div>
+        </form>
+        <div id="reg-result" style="margin-top:1.25rem;"></div>
       </div>
     </section>
 
@@ -880,6 +899,13 @@
               <option value="archived">Archived</option>
             </select>
           </div>
+        </div>
+        <div class="input-group">
+          <label for="prod-channel">Sales Channel</label>
+          <select id="prod-channel" class="form-control">
+            <option value="online">Sold online (can be ordered on the website)</option>
+            <option value="onsite">In-store only (display on website, no online purchase)</option>
+          </select>
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">
           <button type="button" class="btn btn-secondary" data-action="close-product-modal">Cancel</button>
@@ -977,46 +1003,6 @@
         <button type="button" class="btn btn-secondary" data-action="close-message-modal">Close</button>
         <button type="button" class="btn btn-primary" data-action="save-message-status">Save Status</button>
       </div>
-    </div>
-  </div>
-
-  <!-- STAFF MODAL -->
-  <div id="staff-modal" class="modal-backdrop">
-    <div class="modal">
-      <div class="modal-header">
-        <h3>Add Staff Member</h3>
-        <button class="btn btn-secondary btn-sm" data-action="close-staff-modal">✕</button>
-      </div>
-      <p style="color:var(--text-muted); font-size:.8125rem; margin-bottom:1.25rem;">
-        This creates a real dashboard login for this person and generates a one-time temporary password for you to share with them securely.
-      </p>
-      <form id="staff-form">
-        <div class="input-group">
-          <label for="staff-name">Full Name</label>
-          <input type="text" id="staff-name" class="form-control" required />
-        </div>
-        <div class="input-group">
-          <label for="staff-email">Email Address</label>
-          <input type="email" id="staff-email" class="form-control" required />
-        </div>
-        <div class="input-group">
-          <label for="staff-phone">Phone <span style="text-transform:none; font-weight:400;">(optional)</span></label>
-          <input type="text" id="staff-phone" class="form-control" />
-        </div>
-        <div class="input-group">
-          <label for="staff-role">Role</label>
-          <select id="staff-role" class="form-control">
-            <option value="staff">Staff (view-only day-to-day)</option>
-            <option value="manager">Manager (orders, inventory, bookings)</option>
-            <option value="admin">Admin (full access)</option>
-          </select>
-        </div>
-        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">
-          <button type="button" class="btn btn-secondary" data-action="close-staff-modal">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="staff-submit-btn">Create Account</button>
-        </div>
-      </form>
-      <div id="staff-result" style="margin-top:1.25rem;"></div>
     </div>
   </div>
 
