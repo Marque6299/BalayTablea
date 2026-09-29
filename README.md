@@ -29,10 +29,14 @@ balay-tablea-website/
 │                          general / wholesale / sourcing / press)
 ├── admin.html                Internal admin dashboard (auth-gated) — products,
 │                          orders, inventory, visit bookings, site settings
+│                          (markup only — no inline JS; CSP forbids it)
+├── vendor/fontawesome/     Self-hosted Font Awesome Free 6.4.0 (solid only)
+├── supabase/migrations/    SQL migrations (each with a ROLLBACK block)
 ├── css/
 │   └── style.css             Brand design system (Amber/Obsidian/Slate tokens)
 │                          plus all page/component styles
 ├── js/
+│   ├── admin.js               Admin console logic (loaded by admin.html, deferred)
 │   ├── supabase-client.js    Shared anon Supabase client + data helpers
 │   │                         (announcements, products, storefronts, guest
 │   │                         inserts for inquiries/orders/visit bookings)

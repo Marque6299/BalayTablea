@@ -1,4 +1,7 @@
 # Netlify security headers (FE-X-05).
+# script-src has NO 'unsafe-inline': admin logic lives in /js/admin.js and uses
+# data-action hooks — never add inline <script> or on*= attributes to any page.
+# font-src needs 'self' for the self-hosted Font Awesome in /vendor/fontawesome.
 # img-src temporarily allows the two third-party photo hosts still used by the
 # marketing pages. REMOVE both hosts when owned photography replaces them (FE-X-03).
 /*
@@ -6,7 +9,7 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
   Strict-Transport-Security: max-age=31536000; includeSubDomains
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://mmbdewpfmybfkczczdhn.supabase.co https://www.simpol.ph https://region6.dost.gov.ph; connect-src 'self' https://mmbdewpfmybfkczczdhn.supabase.co wss://mmbdewpfmybfkczczdhn.supabase.co; frame-src https://www.google.com https://maps.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://mmbdewpfmybfkczczdhn.supabase.co https://www.simpol.ph https://region6.dost.gov.ph; connect-src 'self' https://mmbdewpfmybfkczczdhn.supabase.co wss://mmbdewpfmybfkczczdhn.supabase.co; frame-src https://www.google.com https://maps.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
 
 /admin.html
   X-Robots-Tag: noindex, nofollow
@@ -14,6 +17,12 @@
 
 /admin/*
   Cache-Control: no-cache
+
+/js/admin.js
+  Cache-Control: no-cache
+
+/vendor/*
+  Cache-Control: public, max-age=86400
 
 /order-status.html
   X-Robots-Tag: noindex
